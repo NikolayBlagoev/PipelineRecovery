@@ -126,7 +126,7 @@ print("Iteration failure probability ", 1 - iter_success_probability)
 for itr in range(50_000):
     for optim in optimizers:
         optim.zero_grad()
-    
+    t1 = time()
     # checkpoint:
     if checkpoint_mode in ["whole_model", "one"]:
         optimizer_checkpoints.clear()
@@ -216,6 +216,7 @@ for itr in range(50_000):
         
         loss.backward()
     print(itr,this_round_loss)
+    print("time:",time()-t1)
     dist.barrier() # wait for everyone
     for idx,s in enumerate(stages):
         tmp = []
