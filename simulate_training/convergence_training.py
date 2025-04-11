@@ -25,7 +25,7 @@ h_failure_probability = int(argv[5])/100
 dist.init_process_group("gloo", rank=rank, world_size=world_size)
 start_iter = int(argv[7]) if len(argv) > 7 else 0
 with open(argv[6],"r") as fd:
-    config = json.loads(fd)
+    config = json.load(fd)
 
 dmodel = config["dmodel"]
 num_heads = config["num_heads"]
