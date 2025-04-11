@@ -253,7 +253,7 @@ for itr in range(50_000):
         print("SAVED")
     
     optim.zero_grad()
-    if itr % 100:
+    if itr % 100 == 0:
         perplxities = []
         iter_vs = iter(validation_dataset)
         for _ in range(validation_amount): 
