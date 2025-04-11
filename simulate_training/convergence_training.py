@@ -216,7 +216,7 @@ for itr in range(50_000):
         
         loss.backward()
     print(itr,this_round_loss)
-    print("time:",time()-t1)
+    
     dist.barrier() # wait for everyone
     for idx,s in enumerate(stages):
         tmp = []
@@ -273,7 +273,7 @@ for itr in range(50_000):
         print("VALIDATION LOSS",itr,sum(perplxities)/len(perplxities))
             
     dist.barrier()
-
+    print("time:",time()-t1)
     
     cuda.empty_cache()
 
