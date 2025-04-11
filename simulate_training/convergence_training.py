@@ -114,12 +114,12 @@ for _ in range(mb_count):
                     
         x = stages[0].forward_end(x)
 t1 = time() - t1
-# 100 MB/s
-t1 += len(stages)*mb_size / (0.1*1024**3)
+# 80 MB/s or 640Mb/s
+t1 += len(stages)*mb_size / (0.08*1024**3)
 t1 += len(stages)*0.3 # account for trailing and other delays
 print("time for F to B",t1 * 2.5) # backwards is a bit slower
-print("time for dp", (world_size - 1) * sum(vls[-1][1]) * 8 / (0.1*1024**3))
-total_time = t1 * 2.5 + (world_size - 1) * sum(vls[-1][1]) * 8 / (0.1*1024**3)
+print("time for dp", (world_size - 1) * sum(vls[-1][1]) * 8 / (0.08*1024**3))
+total_time = t1 * 2.5 + (world_size - 1) * sum(vls[-1][1]) * 8 / (0.08*1024**3)
 print("total time per iteration ", total_time)
 iter_success_probability = sqrt((100 - h_failure_probability)/100)
 print("Iteration failure probability ", 1 - iter_success_probability)
