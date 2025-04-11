@@ -96,7 +96,7 @@ print("Bytes in other stages", sum(vls[-1][1]) * 8)
 
 
 # Convert hourly probability to iter_probability
-test_iter = iter(validation_dataset)
+iter_vs = iter(validation_dataset)
 t1 = time()
 mb_size = batch_size * dmodel * seq_l * 8
 
