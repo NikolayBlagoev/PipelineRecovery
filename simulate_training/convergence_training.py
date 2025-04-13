@@ -1,5 +1,6 @@
 from simplellm.llama import LLamaFirstStage, LLamaStage, LLamaLastStage # get our models
-from simplellm.tokenizers import SPTokenizer # get our tokenizer
+from simplellm.gpt import GPTFirstStage, GPTStage
+from simplellm.tokenizers import SPTokenizer, GPTTokenizer # get our tokenizer
 from simplellm.dataloaders import TinyStories, OpenWebText, RedPyjama # get our dataset
 from simplellm.utils import State
 from simplellm.losses import causalLLMLoss, perplexityLoss # our loss
@@ -36,13 +37,15 @@ batch_size = config["batch_size"]
 lr_scale = config["lr_scale"]
 mb_count = config["mb_count"]
 validation_amount = config["validation"]
+max_iterations = config["max_iterations"]
 checkpoint_mode = argv[1]
 device = argv[2]
 # make the tokenizer
-tokenizer = SPTokenizer()
+
 world_data_size = world_size
 rank_data_size = rank
 if config["architecture"] == "LLaMa":
+    tokenizer = SPTokenizer()
     s0 = LLamaFirstStage(tokenizer.vocab_size,dmodel=dmodel,num_heads=num_heads,
                     device=device, n_layers=0, ctx_size=seq_l,padding_idx=tokenizer.pad_id,de_embed=True)
     stages = [s0]
@@ -51,6 +54,17 @@ if config["architecture"] == "LLaMa":
     for _ in range(n_stages):
         stages.append(LLamaStage(dmodel=dmodel,num_heads=num_heads,
                     device=device, n_layers=n_layers_per_stage, ctx_size=seq_l,padding_idx=tokenizer.pad_id))
+elif config["architecture"] == "GPT":
+    tokenizer = GPTTokenizer()
+    s0 = GPTFirstStage(tokenizer.vocab_size, dmodel=dmodel, num_heads=num_heads, device=device,
+                            n_layers=0, ctx_size=seq_l, padding_idx=tokenizer.pad_id, de_embed=True)
+    stages = [s0]
+
+    # Make the stages:
+    for _ in range(n_stages):
+        stages.append(GPTStage(dmodel=dmodel,num_heads=num_heads,
+                    device=device, n_layers=n_layers_per_stage, ctx_size=seq_l))
+
 
 means = [0 for _ in range(len(stages))]
 stds = [1 for _ in range(len(stages))]
@@ -66,6 +80,10 @@ elif config["dataset"] == "RedPyjamas":
     rank_data_size = rank // 4
     ds = RedPyjama(tokenizer,batch_size=batch_size, seq_l=seq_l,group=s,skip=start_iter*(world_size*mb_count) + validation_amount*2)
     validation_dataset = RedPyjama(tokenizer,batch_size=batch_size, seq_l=seq_l,group=s)
+elif config["dataset"] == "TinyStories":
+    ds = TinyStories(tokenizer,batch_size=batch_size, seq_l=seq_l,skip=start_iter*(world_size*mb_count))
+    validation_dataset = TinyStories(tokenizer,batch_size=batch_size, seq_l=seq_l, split="validation")
+
 
 
 # we can iterate the dataset with:
@@ -123,7 +141,7 @@ total_time = t1 * 2.5 + (world_size - 1) * sum(vls[-1][1]) * 8 / (0.08*1024**3)
 print("total time per iteration ", total_time)
 iter_success_probability = sqrt((100 - h_failure_probability)/100)
 print("Iteration failure probability ", 1 - iter_success_probability)
-for itr in range(50_000):
+for itr in range(max_iterations):
     for optim in optimizers:
         optim.zero_grad()
     t1 = time()
