@@ -291,8 +291,9 @@ for itr in range(max_iterations):
         torch.nn.utils.clip_grad_norm_(s.parameters(),max_norm=1.0)
     
     for optim in optimizers:
-        optim.step()   
         optim.optimizer.step()
+        optim.step()   
+        
     if itr % 100 == 0 and rank == 0:
         print("SAVING ITERATION",itr)
         for i,s in enumerate(stages):
