@@ -169,7 +169,7 @@ print("Iteration failure probability ", 1 - iter_success_probability)
 for itr in range(max_iterations):
 
     for optim in optimizers:
-        optim.zero_grad()
+        optim.optimizer.zero_grad()
     t1 = time()
     # checkpoint:
     if checkpoint_mode in ["whole_model", "one"]:
@@ -292,13 +292,14 @@ for itr in range(max_iterations):
     
     for optim in optimizers:
         optim.step()   
+        optim.optimizer.step()
     if itr % 100 == 0 and rank == 0:
         print("SAVING ITERATION",itr)
         for i,s in enumerate(stages):
             torch.save(s.state_dict(), f"mdl_{i}.pth") 
         print("SAVED")
     
-    optim.zero_grad()
+    
     if itr % 100 == 0:
         perplxities = []
         iter_vs = iter(validation_dataset)
