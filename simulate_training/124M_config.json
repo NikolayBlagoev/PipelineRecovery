@@ -1,6 +1,6 @@
 {
     "dataset": "TinyStories",
-    "architecture": "GPT",
+    "architecture": "LLaMa",
     "validation": 500,
     "dmodel": 768,
     "num_heads": 12,

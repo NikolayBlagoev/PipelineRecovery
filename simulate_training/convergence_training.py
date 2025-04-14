@@ -42,7 +42,8 @@ init_lr = config["lr"]
 checkpoint_mode = argv[1]
 device = argv[2]
 # make the tokenizer
-
+def make_optim(net,lr):
+    return AdamW(net.parameters(), lr, betas = (0.9, 0.95))
 world_data_size = world_size
 rank_data_size = rank
 if config["architecture"] == "LLaMa":
@@ -93,7 +94,7 @@ iter_ds = iter(ds)
 optimizers = []
 optimizer_checkpoints = []
 for i in range(len(stages)):
-    optimizers.append(AdamW(stages[i].parameters(),lr=init_lr))
+    optimizers.append(make_optim(stages[i].parameters(),lr=init_lr))
 
 checkpoints = []
 
@@ -188,16 +189,16 @@ for itr in range(max_iterations):
                     else:
                         selector = i - 1
                     s.load_state_dict(deepcopy(stages[selector].state_dict()))
-                    optimizers[i] = AdamW(s.parameters(),lr = lr_scale*init_lr)
+                    optimizers[i] = make_optim(s.parameters(),lr = lr_scale*init_lr)
                         
                 elif checkpoint_mode == "ours-grad-avg":
                     if i == len(stages)-1:
                         
                         s.load_state_dict(deepcopy(stages[i-1].state_dict()))
-                        optimizers[i] = AdamW(s.parameters(),lr = lr_scale*init_lr)
+                        optimizers[i] = make_optim(s.parameters(),lr = lr_scale*init_lr)
                     elif i == 1: 
                         s.load_state_dict(deepcopy(stages[i+1].state_dict()))
-                        optimizers[i] = AdamW(s.parameters(),lr = lr_scale*init_lr)
+                        optimizers[i] = make_optim(s.parameters(),lr = lr_scale*init_lr)
                     else:
                         m1 = deepcopy(stages[i+1].state_dict())
                         m2 = deepcopy(stages[i-1].state_dict())
@@ -208,19 +209,19 @@ for itr in range(max_iterations):
                             m3[key] = (alpha*m1[key] + beta*m2[key]) / (alpha + beta)
                         s.load_state_dict(m3)
                         
-                        optimizers[i] = AdamW(s.parameters(),lr = lr_scale*init_lr)
+                        optimizers[i] = make_optim(s.parameters(),lr = lr_scale*init_lr)
                         del m3
                         del m2
                         del m1
                 
                 elif checkpoint_mode == "one":
                     s.load_state_dict(deepcopy(checkpoints[i]))
-                    optimizers[i] = AdamW(s.parameters(),lr = init_lr)
+                    optimizers[i] = make_optim(s.parameters(),lr = init_lr)
                     optimizers[i].load_state_dict(deepcopy(optimizer_checkpoints[i]))
                 elif checkpoint_mode == "whole_model":
                     for idx,s2 in enumerate(stages):
                         stages[idx].load_state_dict(deepcopy(checkpoints[idx]))
-                        optimizers[idx] = AdamW(stages[idx].parameters(),lr = init_lr)
+                        optimizers[idx] = make_optim(stages[idx].parameters(),lr = init_lr)
                         optimizers[idx].load_state_dict(deepcopy(optimizer_checkpoints[idx]))
                 elif checkpoint_mode == "no_failure":
                     can_fail = False
