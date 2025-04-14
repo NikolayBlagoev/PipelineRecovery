@@ -142,6 +142,7 @@ print("total time per iteration ", total_time)
 iter_success_probability = sqrt((100 - h_failure_probability)/100)
 print("Iteration failure probability ", 1 - iter_success_probability)
 for itr in range(max_iterations):
+
     for optim in optimizers:
         optim.zero_grad()
     t1 = time()
@@ -157,6 +158,7 @@ for itr in range(max_iterations):
     this_round_loss = 0
     failures = [-1 for _ in range(len(stages))]
     for s in range(len(stages)):
+        stages[s].train()
         if s == 0:
             continue
         can_fail = random.random() > iter_success_probability
@@ -281,6 +283,7 @@ for itr in range(max_iterations):
                 x = x.to(device)
                 target = x.clone().detach()
                 for i,s in enumerate(stages):
+                    s.eval()
                     if i == 0:
                         x = s.embed(x)
                     else:
