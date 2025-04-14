@@ -42,6 +42,9 @@ max_iterations = config["max_iterations"]
 init_lr = config["lr"]
 checkpoint_mode = argv[1]
 device = argv[2]
+num_warmup_steps = 2000
+num_training_steps = max_iterations
+num_cycles = 0.5
 def lr_lambda(current_step: int) -> float:
         # linear warmup phase
     if current_step < num_warmup_steps:
