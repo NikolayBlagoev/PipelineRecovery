@@ -139,8 +139,10 @@ t1 += len(stages)*0.3 # account for trailing and other delays
 print("time for F to B",t1 * 2.5) # backwards is a bit slower
 print("time for dp", (world_size - 1) * sum(vls[-1][1]) * 8 / (0.08*1024**3))
 total_time = t1 * 2.5 + (world_size - 1) * sum(vls[-1][1]) * 8 / (0.08*1024**3)
+total_time *= 1.1 # synchronisation
 print("total time per iteration ", total_time)
-iter_success_probability = sqrt((100 - h_failure_probability)/100)
+iterations_per_h = 60*60 / total_time 
+iter_success_probability = ((100 - h_failure_probability)/100)**(1/iterations_per_h)
 print("Iteration failure probability ", 1 - iter_success_probability)
 for itr in range(max_iterations):
 
