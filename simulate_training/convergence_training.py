@@ -11,6 +11,7 @@ random.seed(42)
 State.set_seed(42)
 from torch.optim import AdamW
 import torch.nn.functional as F
+from torch.optim.lr_scheduler import LambdaLR
 from torch import save, cuda, zeros_like, cat, mean, std
 import torch
 import torch.distributed as dist
@@ -41,9 +42,26 @@ max_iterations = config["max_iterations"]
 init_lr = config["lr"]
 checkpoint_mode = argv[1]
 device = argv[2]
+def lr_lambda(current_step: int) -> float:
+        # linear warmup phase
+    if current_step < num_warmup_steps:
+        return current_step / max(1, num_warmup_steps)
+
+    # cosine
+    progress = (current_step - num_warmup_steps) / max(
+            1, num_training_steps - num_warmup_steps
+    )
+
+    cosine_lr_multiple = 0.5 * (
+            1.0 + math.cos(math.pi * num_cycles * 2.0 * progress)
+    )
+    return max(0.0, cosine_lr_multiple)
+
+    
 # make the tokenizer
 def make_optim(params,lr):
-    return AdamW(params, lr, betas = (0.9, 0.95))
+    return LambdaLR(AdamW(params, lr, betas = (0.9, 0.95)), lr_lambda, -1)
+
 world_data_size = world_size
 rank_data_size = rank
 if config["architecture"] == "LLaMa":
