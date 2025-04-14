@@ -19,6 +19,7 @@ import os
 import json
 from time import time
 from math import sqrt
+import math
 rank = int(argv[3])
 os.environ["MASTER_ADDR"] = "localhost"
 world_size = int(argv[4])
