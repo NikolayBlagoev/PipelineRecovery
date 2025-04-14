@@ -9,7 +9,7 @@ from sys import argv
 import random
 random.seed(42)
 State.set_seed(42)
-from torch.optim import Adam
+from torch.optim import AdamW
 import torch.nn.functional as F
 from torch import save, cuda, zeros_like, cat, mean, std
 import torch
@@ -93,7 +93,7 @@ iter_ds = iter(ds)
 optimizers = []
 optimizer_checkpoints = []
 for i in range(len(stages)):
-    optimizers.append(Adam(stages[i].parameters(),lr=init_lr))
+    optimizers.append(AdamW(stages[i].parameters(),lr=init_lr))
 
 checkpoints = []
 
@@ -186,16 +186,16 @@ for itr in range(max_iterations):
                     else:
                         selector = i - 1
                     s.load_state_dict(deepcopy(stages[selector].state_dict()))
-                    optimizers[i] = Adam(s.parameters(),lr = lr_scale*init_lr)
+                    optimizers[i] = AdamW(s.parameters(),lr = lr_scale*init_lr)
                         
                 elif checkpoint_mode == "ours-grad-avg":
                     if i == len(stages)-1:
                         
                         s.load_state_dict(deepcopy(stages[i-1].state_dict()))
-                        optimizers[i] = Adam(s.parameters(),lr = lr_scale*init_lr)
+                        optimizers[i] = AdamW(s.parameters(),lr = lr_scale*init_lr)
                     elif i == 1: 
                         s.load_state_dict(deepcopy(stages[i+1].state_dict()))
-                        optimizers[i] = Adam(s.parameters(),lr = lr_scale*init_lr)
+                        optimizers[i] = AdamW(s.parameters(),lr = lr_scale*init_lr)
                     else:
                         m1 = deepcopy(stages[i+1].state_dict())
                         m2 = deepcopy(stages[i-1].state_dict())
@@ -206,19 +206,19 @@ for itr in range(max_iterations):
                             m3[key] = (alpha*m1[key] + beta*m2[key]) / (alpha + beta)
                         s.load_state_dict(m3)
                         
-                        optimizers[i] = Adam(s.parameters(),lr = lr_scale*init_lr)
+                        optimizers[i] = AdamW(s.parameters(),lr = lr_scale*init_lr)
                         del m3
                         del m2
                         del m1
                 
                 elif checkpoint_mode == "one":
                     s.load_state_dict(deepcopy(checkpoints[i]))
-                    optimizers[i] = Adam(s.parameters(),lr = init_lr)
+                    optimizers[i] = AdamW(s.parameters(),lr = init_lr)
                     optimizers[i].load_state_dict(deepcopy(optimizer_checkpoints[i]))
                 elif checkpoint_mode == "whole_model":
                     for idx,s2 in enumerate(stages):
                         stages[idx].load_state_dict(deepcopy(checkpoints[idx]))
-                        optimizers[idx] = Adam(stages[idx].parameters(),lr = init_lr)
+                        optimizers[idx] = AdamW(stages[idx].parameters(),lr = init_lr)
                         optimizers[idx].load_state_dict(deepcopy(optimizer_checkpoints[idx]))
                 elif checkpoint_mode == "no_failure":
                     can_fail = False
