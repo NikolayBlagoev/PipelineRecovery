@@ -42,8 +42,8 @@ init_lr = config["lr"]
 checkpoint_mode = argv[1]
 device = argv[2]
 # make the tokenizer
-def make_optim(net,lr):
-    return AdamW(net.parameters(), lr, betas = (0.9, 0.95))
+def make_optim(params,lr):
+    return AdamW(params, lr, betas = (0.9, 0.95))
 world_data_size = world_size
 rank_data_size = rank
 if config["architecture"] == "LLaMa":
