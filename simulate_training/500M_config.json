@@ -10,6 +10,6 @@
     "batch_size": 32,
     "mb_count": 4,
     "lr_scale": 1.1,
-    "max_iterations": 50001,
+    "max_iterations": 60001,
     "lr": 0.0006
 }
