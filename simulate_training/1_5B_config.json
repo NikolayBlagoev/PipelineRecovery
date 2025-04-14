@@ -10,5 +10,5 @@
     "batch_size": 16,
     "mb_count": 4,
     "lr_scale": 1.1,
-    "max_iterations": 50000
+    "max_iterations": 50001
 }
