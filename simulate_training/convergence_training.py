@@ -305,6 +305,7 @@ for itr in range(max_iterations):
             print("SAVING ITERATION",itr)
             for i,s in enumerate(stages):
                 torch.save(s.state_dict(), f"mdl_{i}.pth") 
+                torch.save(optimizers[i].optimizer.state_dict(), f"optim_{i}.pth")
             print("SAVED")
         
         
