@@ -182,7 +182,7 @@ for itr in range(max_iterations):
         if checkpoint_mode in ["whole_model", "one"]:
             optimizer_checkpoints.clear()
             for optim in optimizers:
-                optimizer_checkpoints.append(deepcopy(optim.state_dict()))
+                optimizer_checkpoints.append(deepcopy(optim.optimizer.state_dict()))
             checkpoints.clear()
             for s in stages:
                 checkpoints.append(deepcopy(s.state_dict()))
@@ -218,6 +218,7 @@ for itr in range(max_iterations):
                             selector = i - 1
                         s.load_state_dict(deepcopy(stages[selector].state_dict()))
                         optimizers[i] = make_optim(s.parameters(),lr = lr_scale*init_lr)
+                        
                             
                     elif checkpoint_mode == "ours-grad-avg":
                         if i == len(stages)-1:
@@ -245,7 +246,7 @@ for itr in range(max_iterations):
                     elif checkpoint_mode == "one":
                         s.load_state_dict(deepcopy(checkpoints[i]))
                         optimizers[i] = make_optim(s.parameters(),lr = init_lr)
-                        optimizers[i].load_state_dict(deepcopy(optimizer_checkpoints[i]))
+                        optimizers[i].optimizer.load_state_dict(deepcopy(optimizer_checkpoints[i]))
                     elif checkpoint_mode == "whole_model":
                         for idx,s2 in enumerate(stages):
                             stages[idx].load_state_dict(deepcopy(checkpoints[idx]))
