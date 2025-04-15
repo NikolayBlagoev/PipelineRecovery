@@ -40,12 +40,13 @@ batch_size = config["batch_size"]
 lr_scale = config["lr_scale"]
 mb_count = config["mb_count"]
 validation_amount = config["validation"]
-max_iterations = config["max_iterations"]
+max_iterations = config["max_iterations"] 
 init_lr = config["lr"]
 checkpoint_mode = argv[1]
 device = argv[2]
 num_warmup_steps = 2000
 num_training_steps = max_iterations
+max_iterations = max_iterations - start_iter
 num_cycles = 0.5
 def lr_lambda(current_step: int) -> float:
         # linear warmup phase
