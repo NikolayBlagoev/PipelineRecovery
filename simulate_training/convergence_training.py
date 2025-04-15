@@ -15,6 +15,7 @@ from torch.optim.lr_scheduler import LambdaLR
 from torch import save, cuda, zeros_like, cat, mean, std
 import torch
 import torch.distributed as dist
+import traceback
 import os
 import json
 from time import time
@@ -48,6 +49,7 @@ num_training_steps = max_iterations
 num_cycles = 0.5
 def lr_lambda(current_step: int) -> float:
         # linear warmup phase
+    current_step += start_iter
     if current_step < num_warmup_steps:
         return current_step / max(1, num_warmup_steps)
 
@@ -72,6 +74,7 @@ if config["architecture"] == "LLaMa":
     tokenizer = SPTokenizer()
     s0 = LLamaFirstStage(tokenizer.vocab_size,dmodel=dmodel,num_heads=num_heads,
                     device=device, n_layers=0, ctx_size=seq_l,padding_idx=tokenizer.pad_id,de_embed=True)
+    
     stages = [s0]
 
     # Make the stages:
@@ -88,7 +91,9 @@ elif config["architecture"] == "GPT":
     for _ in range(n_stages):
         stages.append(GPTStage(dmodel=dmodel,num_heads=num_heads,
                     device=device, n_layers=n_layers_per_stage, ctx_size=seq_l))
-
+if start_iter > 0:
+    for i,s in enumerate(stages):
+        s.load_state_dict(torch.load(f"mdl_{i}.pth",map_location=device))
 
 means = [0 for _ in range(len(stages))]
 stds = [1 for _ in range(len(stages))]
@@ -168,163 +173,166 @@ iterations_per_h = 60*60 / total_time
 iter_success_probability = ((100 - h_failure_probability)/100)**(1/iterations_per_h)
 print("Iteration failure probability ", 1 - iter_success_probability)
 for itr in range(max_iterations):
-
-    for optim in optimizers:
-        optim.optimizer.zero_grad()
-    t1 = time()
-    # checkpoint:
-    if checkpoint_mode in ["whole_model", "one"]:
-        optimizer_checkpoints.clear()
+    try:
         for optim in optimizers:
-            optimizer_checkpoints.append(deepcopy(optim.state_dict()))
-        checkpoints.clear()
-        for s in stages:
-            checkpoints.append(deepcopy(s.state_dict()))
+            optim.optimizer.zero_grad()
+        t1 = time()
+        # checkpoint:
+        if checkpoint_mode in ["whole_model", "one"]:
+            optimizer_checkpoints.clear()
+            for optim in optimizers:
+                optimizer_checkpoints.append(deepcopy(optim.state_dict()))
+            checkpoints.clear()
+            for s in stages:
+                checkpoints.append(deepcopy(s.state_dict()))
 
-    this_round_loss = 0
-    failures = [-1 for _ in range(len(stages))]
-    for s in range(len(stages)):
-        stages[s].train()
-        if s == 0:
-            continue
-        can_fail = random.random() > iter_success_probability
-        if can_fail:
-            failures[s] = random.randint(0,mb_count-1)
-    
-    
-    for mbid in range(mb_count): 
-        x = None
-        for idx in range(world_data_size):
-            if idx == rank_data_size:
-                x = next(iter_ds)
-                x = x.to(device)
-            else:
-                next(iter_ds)
-        target = x.clone().detach()
-        can_fail = True
-        for i,s in enumerate(stages):
-            if  mbid == failures[i]:
-                print("failure",itr,mbid,i)
-                if checkpoint_mode == "ours-naive":
-                    if i == 1:
-                        selector = i + 1
-                    else:
-                        selector = i - 1
-                    s.load_state_dict(deepcopy(stages[selector].state_dict()))
-                    optimizers[i] = make_optim(s.parameters(),lr = lr_scale*init_lr)
-                        
-                elif checkpoint_mode == "ours-grad-avg":
-                    if i == len(stages)-1:
-                        
-                        s.load_state_dict(deepcopy(stages[i-1].state_dict()))
+        this_round_loss = 0
+        failures = [-1 for _ in range(len(stages))]
+        for s in range(len(stages)):
+            stages[s].train()
+            if s == 0:
+                continue
+            can_fail = random.random() > iter_success_probability
+            if can_fail:
+                failures[s] = random.randint(0,mb_count-1)
+        
+        
+        for mbid in range(mb_count): 
+            x = None
+            for idx in range(world_data_size):
+                if idx == rank_data_size:
+                    x = next(iter_ds)
+                    x = x.to(device)
+                else:
+                    next(iter_ds)
+            target = x.clone().detach()
+            can_fail = True
+            for i,s in enumerate(stages):
+                if  mbid == failures[i]:
+                    print("failure",itr,mbid,i)
+                    if checkpoint_mode == "ours-naive":
+                        if i == 1:
+                            selector = i + 1
+                        else:
+                            selector = i - 1
+                        s.load_state_dict(deepcopy(stages[selector].state_dict()))
                         optimizers[i] = make_optim(s.parameters(),lr = lr_scale*init_lr)
-                    elif i == 1: 
-                        s.load_state_dict(deepcopy(stages[i+1].state_dict()))
-                        optimizers[i] = make_optim(s.parameters(),lr = lr_scale*init_lr)
-                    else:
-                        m1 = deepcopy(stages[i+1].state_dict())
-                        m2 = deepcopy(stages[i-1].state_dict())
-                        alpha = abs(prev_gradient_norm[i+1]) + 0.0001
-                        beta = abs(prev_gradient_norm[i-1]) + 0.0001
-                        m3 = s.state_dict()
-                        for key in m1:
-                            m3[key] = (alpha*m1[key] + beta*m2[key]) / (alpha + beta)
-                        s.load_state_dict(m3)
-                        
-                        optimizers[i] = make_optim(s.parameters(),lr = lr_scale*init_lr)
-                        del m3
-                        del m2
-                        del m1
-                
-                elif checkpoint_mode == "one":
-                    s.load_state_dict(deepcopy(checkpoints[i]))
-                    optimizers[i] = make_optim(s.parameters(),lr = init_lr)
-                    optimizers[i].load_state_dict(deepcopy(optimizer_checkpoints[i]))
-                elif checkpoint_mode == "whole_model":
-                    for idx,s2 in enumerate(stages):
-                        stages[idx].load_state_dict(deepcopy(checkpoints[idx]))
-                        optimizers[idx] = make_optim(stages[idx].parameters(),lr = init_lr)
-                        optimizers[idx].load_state_dict(deepcopy(optimizer_checkpoints[idx]))
-                elif checkpoint_mode == "no_failure":
-                    can_fail = False
-                
+                            
+                    elif checkpoint_mode == "ours-grad-avg":
+                        if i == len(stages)-1:
+                            
+                            s.load_state_dict(deepcopy(stages[i-1].state_dict()))
+                            optimizers[i] = make_optim(s.parameters(),lr = lr_scale*init_lr)
+                        elif i == 1: 
+                            s.load_state_dict(deepcopy(stages[i+1].state_dict()))
+                            optimizers[i] = make_optim(s.parameters(),lr = lr_scale*init_lr)
+                        else:
+                            m1 = deepcopy(stages[i+1].state_dict())
+                            m2 = deepcopy(stages[i-1].state_dict())
+                            alpha = abs(prev_gradient_norm[i+1]) + 0.0001
+                            beta = abs(prev_gradient_norm[i-1]) + 0.0001
+                            m3 = s.state_dict()
+                            for key in m1:
+                                m3[key] = (alpha*m1[key] + beta*m2[key]) / (alpha + beta)
+                            s.load_state_dict(m3)
+                            
+                            optimizers[i] = make_optim(s.parameters(),lr = lr_scale*init_lr)
+                            del m3
+                            del m2
+                            del m1
+                    
+                    elif checkpoint_mode == "one":
+                        s.load_state_dict(deepcopy(checkpoints[i]))
+                        optimizers[i] = make_optim(s.parameters(),lr = init_lr)
+                        optimizers[i].load_state_dict(deepcopy(optimizer_checkpoints[i]))
+                    elif checkpoint_mode == "whole_model":
+                        for idx,s2 in enumerate(stages):
+                            stages[idx].load_state_dict(deepcopy(checkpoints[idx]))
+                            optimizers[idx] = make_optim(stages[idx].parameters(),lr = init_lr)
+                            optimizers[idx].load_state_dict(deepcopy(optimizer_checkpoints[idx]))
+                    elif checkpoint_mode == "no_failure":
+                        can_fail = False
+                    
 
-            if i == 0:
-                x = s.embed(x)
-            else:
-                x = s(x)
-        x = stages[0].forward_end(x)
-        
-        loss = causalLLMLoss(x,target,tokenizer.vocab_size)
-        loss = loss / mb_count
-        
-        this_round_loss += loss.item()
-        
-        loss.backward()
-    print(itr,this_round_loss)
-    
-    dist.barrier() # wait for everyone
-    for idx,s in enumerate(stages):
-        tmp = []
-        for param in s.parameters():
-            if param.grad == None:
-                tmp.append(torch.zeros_like(param,device="cpu").view(-1))                      
-                continue
-            tmp.append(param.grad.view(-1))
-            param.grad = None
-        prev_grad = torch.cat(tmp).to("cpu")
-        dist.all_reduce(prev_grad, op = dist.ReduceOp.SUM)
-        tmp = torch.split(prev_grad, vls[idx][1])
-        for i, param in enumerate(s.parameters()):
-            param.grad = tmp[i].view(vls[idx][0][i]).to(device)/world_size # average
-        
-    for i,s in enumerate(stages):
-        tmp = []
-        
-        for p in s.parameters():
-            if p.grad == None:
-                tmp.append(zeros_like(p.data).view(-1))   
-                continue
-            tmp.append(p.grad.view(-1))
-               
-        tmp = cat(tmp)
-        prev_gradient_norm[i] = torch.linalg.vector_norm(tmp).item() + 0.00001
-        torch.nn.utils.clip_grad_norm_(s.parameters(),max_norm=1.0)
-    
-    for optim in optimizers:
-        optim.optimizer.step()
-        optim.step()   
-        
-    if itr % 100 == 0 and rank == 0:
-        print("SAVING ITERATION",itr)
-        for i,s in enumerate(stages):
-            torch.save(s.state_dict(), f"mdl_{i}.pth") 
-        print("SAVED")
-    
-    
-    if itr % 100 == 0:
-        perplxities = []
-        iter_vs = iter(validation_dataset)
-        for _ in range(validation_amount): 
-            with torch.no_grad():
-                x = next(iter_vs)
-                x = x.to(device)
-                target = x.clone().detach()
-                for i,s in enumerate(stages):
-                    s.eval()
-                    if i == 0:
-                        x = s.embed(x)
-                    else:
-                        x = s(x)
-                x = stages[0].forward_end(x)
-                loss = perplexityLoss(x,target)
-                perplxities.append(loss.item())
-        print("VALIDATION LOSS",itr,sum(perplxities)/len(perplxities))
+                if i == 0:
+                    x = s.embed(x)
+                else:
+                    x = s(x)
+            x = stages[0].forward_end(x)
             
-    dist.barrier()
-    print("time:",time()-t1)
-    
-    cuda.empty_cache()
+            loss = causalLLMLoss(x,target,tokenizer.vocab_size)
+            loss = loss / mb_count
+            
+            this_round_loss += loss.item()
+            
+            loss.backward()
+        print(itr,this_round_loss)
+        
+        dist.barrier() # wait for everyone
+        for idx,s in enumerate(stages):
+            tmp = []
+            for param in s.parameters():
+                if param.grad == None:
+                    tmp.append(torch.zeros_like(param,device="cpu").view(-1))                      
+                    continue
+                tmp.append(param.grad.view(-1))
+                param.grad = None
+            prev_grad = torch.cat(tmp).to("cpu")
+            dist.all_reduce(prev_grad, op = dist.ReduceOp.SUM)
+            tmp = torch.split(prev_grad, vls[idx][1])
+            for i, param in enumerate(s.parameters()):
+                param.grad = tmp[i].view(vls[idx][0][i]).to(device)/world_size # average
+            
+        for i,s in enumerate(stages):
+            tmp = []
+            
+            for p in s.parameters():
+                if p.grad == None:
+                    tmp.append(zeros_like(p.data).view(-1))   
+                    continue
+                tmp.append(p.grad.view(-1))
+                
+            tmp = cat(tmp)
+            prev_gradient_norm[i] = torch.linalg.vector_norm(tmp).item() + 0.00001
+            torch.nn.utils.clip_grad_norm_(s.parameters(),max_norm=1.0)
+        
+        for optim in optimizers:
+            optim.optimizer.step()
+            optim.step()   
+            
+        if itr % 100 == 0 and rank == 0:
+            print("SAVING ITERATION",itr)
+            for i,s in enumerate(stages):
+                torch.save(s.state_dict(), f"mdl_{i}.pth") 
+            print("SAVED")
+        
+        
+        if itr % 100 == 0:
+            perplxities = []
+            iter_vs = iter(validation_dataset)
+            for _ in range(validation_amount): 
+                with torch.no_grad():
+                    x = next(iter_vs)
+                    x = x.to(device)
+                    target = x.clone().detach()
+                    for i,s in enumerate(stages):
+                        s.eval()
+                        if i == 0:
+                            x = s.embed(x)
+                        else:
+                            x = s(x)
+                    x = stages[0].forward_end(x)
+                    loss = perplexityLoss(x,target)
+                    perplxities.append(loss.item())
+            print("VALIDATION LOSS",itr,sum(perplxities)/len(perplxities))
+                
+        dist.barrier()
+        print("time:",time()-t1)
+        
+        cuda.empty_cache()
+    except Exception:
+        print(traceback.format_exc())
+
 
 
 
