@@ -196,12 +196,21 @@ for itr in range(max_iterations):
         
         for mbid in range(mb_count): 
             x = None
-            for idx in range(world_data_size):
-                if idx == rank_data_size:
-                    x = next(iter_ds)
-                    x = x.to(device)
-                else:
-                    next(iter_ds)
+            flg = True
+            idx = 0
+            while flg:
+                flg = False
+                try:
+                    while idx < rank_data_size:
+                        if idx == rank_data_size:
+                            x = next(iter_ds)
+                            x = x.to(device)
+                        else:
+                            next(iter_ds)
+                        idx+=1
+                except StopIteration:
+                    flg = True
+                    iter_ds = iter(ds)
             target = x.clone().detach()
             can_fail = True
             for i,s in enumerate(stages):
