@@ -105,7 +105,7 @@ if config["dataset"] == "OpenWebText":
     validation_dataset = OpenWebText(tokenizer,batch_size=16, seq_l=seq_l)
 elif config["dataset"] == "RedPyjamas":
     ds = RedPyjamav2(tokenizer,batch_size=batch_size, seq_l=seq_l,name="default",skip=start_iter*(world_data_size*mb_count) + validation_amount*2)
-    validation_dataset = RedPyjamav2(tokenizer,batch_size=16, seq_l=seq_l,name=s)
+    validation_dataset = RedPyjamav2(tokenizer,batch_size=16, seq_l=seq_l,name="default")
 elif config["dataset"] == "TinyStories":
     ds = TinyStories(tokenizer,batch_size=batch_size, seq_l=seq_l,skip=start_iter*(world_size*mb_count))
     validation_dataset = TinyStories(tokenizer,batch_size=16, seq_l=seq_l, split="validation")
