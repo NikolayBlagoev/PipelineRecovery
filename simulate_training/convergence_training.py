@@ -159,8 +159,9 @@ for _ in range(mb_count):
         x = stages[0].forward_end(x)
 t1 = (time() - t1) 
 # 80 MB/s or 640Mb/s
-t1 += len(stages)*mb_size * 4 / (0.08*1024**3) # in reality you will do multiple waves
+t1 += len(stages)*mb_size / (0.08*1024**3) # in reality you will do multiple waves
 t1 += len(stages)*0.3 # account for trailing and other delays
+t1 = t1 * 4 # in reality you will do multiple waves
 print("time for F to B",t1 * 2.5) # backwards is a bit slower
 print("time for dp", (3*world_size - 1) * sum(vls[-1][1]) * 8 / (0.08*1024**3))
 total_time = t1 * 2.5 + (3*world_size - 1) * sum(vls[-1][1]) * 8 / (0.08*1024**3)
