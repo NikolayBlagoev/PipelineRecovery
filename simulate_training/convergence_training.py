@@ -67,7 +67,7 @@ def lr_lambda(current_step: int) -> float:
     
 # make the tokenizer
 def make_optim(params,lr):
-    return LambdaLR(AdamW(params, lr, betas = (0.9, 0.95)), lr_lambda, -1)
+    return Adam(params, lr)
 
 world_data_size = world_size
 rank_data_size = rank
