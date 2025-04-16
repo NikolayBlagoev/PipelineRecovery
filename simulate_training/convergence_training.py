@@ -176,13 +176,13 @@ print("Iteration failure probability ", 1 - iter_success_probability)
 for itr in range(max_iterations):
     try:
         for optim in optimizers:
-            optim.optimizer.zero_grad()
+            optim.zero_grad()
         t1 = time()
         # checkpoint:
         if checkpoint_mode in ["whole_model", "one"]:
             optimizer_checkpoints.clear()
             for optim in optimizers:
-                optimizer_checkpoints.append(deepcopy(optim.optimizer.state_dict()))
+                optimizer_checkpoints.append(deepcopy(optim.state_dict()))
             checkpoints.clear()
             for s in stages:
                 checkpoints.append(deepcopy(s.state_dict()))
@@ -246,7 +246,7 @@ for itr in range(max_iterations):
                     elif checkpoint_mode == "one":
                         s.load_state_dict(deepcopy(checkpoints[i]))
                         optimizers[i] = make_optim(s.parameters(),lr = init_lr)
-                        optimizers[i].optimizer.load_state_dict(deepcopy(optimizer_checkpoints[i]))
+                        optimizers[i].load_state_dict(deepcopy(optimizer_checkpoints[i]))
                     elif checkpoint_mode == "whole_model":
                         for idx,s2 in enumerate(stages):
                             stages[idx].load_state_dict(deepcopy(checkpoints[idx]))
@@ -301,14 +301,14 @@ for itr in range(max_iterations):
             torch.nn.utils.clip_grad_norm_(s.parameters(),max_norm=1.0)
         
         for optim in optimizers:
-            optim.optimizer.step()
+            optim.step()
             optim.step()   
             
         if itr % 100 == 0 and rank == 0:
             print("SAVING ITERATION",itr)
             for i,s in enumerate(stages):
                 torch.save(s.state_dict(), f"mdl_{i}.pth") 
-                torch.save(optimizers[i].optimizer.state_dict(), f"optim_{i}.pth")
+                torch.save(optimizers[i].state_dict(), f"optim_{i}.pth")
             print("SAVED")
         
         
