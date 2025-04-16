@@ -168,7 +168,8 @@ total_time = t1 * 2.5 + (3*world_size - 1) * sum(vls[-1][1]) * 8 / (0.06*1024**3
 total_time *=  2 # synchronisation
 print("total time per iteration ", total_time)
 iterations_per_h = 60*60 / total_time 
-iter_success_probability = ((100 - h_failure_probability)/100)**(1/iterations_per_h)
+print(60*60 / total_time, 100 - h_failure_probability)
+iter_success_probability = ((100 - h_failure_probability)/100)**(total_time / 3600)
 print("Iteration failure probability ", 1 - iter_success_probability)
 for itr in range(max_iterations):
     try:
