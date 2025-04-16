@@ -7,5 +7,8 @@
 ./run.sh ours-naive 2 16 500M_config.json 0
 ./run.sh ours-grad-avg 1 16 124M_config.json 0
 ./run.sh ours-grad-avg 4 16 1_5B_config.json 0
+./run.sh ours-grad-avg 2 33 500M_config.json 0
+
+./run.sh ours-grad-avg 2 16 500M_config.json 0
 524296192
 536936448

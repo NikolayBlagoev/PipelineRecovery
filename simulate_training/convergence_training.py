@@ -49,7 +49,7 @@ num_training_steps = max_iterations
 max_iterations = max_iterations - start_iter
 num_cycles = 0.5
 def lr_lambda(current_step: int) -> float:
-        # linear warmup phase
+    # linear warmup phase
     current_step += start_iter
     if current_step < num_warmup_steps:
         return current_step / max(1, num_warmup_steps)
@@ -271,6 +271,8 @@ for itr in range(max_iterations):
         print(itr,this_round_loss)
         
         dist.barrier() # wait for everyone
+
+        # Sync weights
         for idx,s in enumerate(stages):
             tmp = []
             for param in s.parameters():
@@ -312,6 +314,7 @@ for itr in range(max_iterations):
         
         if itr % 100 == 0:
             perplxities = []
+            normal_loss = []
             iter_vs = iter(validation_dataset)
             for _ in range(validation_amount): 
                 with torch.no_grad():
@@ -327,7 +330,10 @@ for itr in range(max_iterations):
                     x = stages[0].forward_end(x)
                     loss = perplexityLoss(x,target)
                     perplxities.append(loss.item())
+                    loss = causalLLMLoss(x,target,tokenizer.vocab_size)
+                    normal_loss.append(loss.item())
             print("VALIDATION LOSS",itr,sum(perplxities)/len(perplxities))
+            print("NORMAL LOSS",itr,sum(normal_loss)/len(normal_loss))
                 
         dist.barrier()
         print("time:",time()-t1)

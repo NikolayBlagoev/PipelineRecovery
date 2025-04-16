@@ -7,7 +7,7 @@
     "n_layers_per_stage": 4,
     "n_stages": 6,
     "seq_l": 4096,
-    "batch_size": 32,
+    "batch_size": 128,
     "mb_count": 4,
     "lr_scale": 1.1,
     "max_iterations": 100001,
