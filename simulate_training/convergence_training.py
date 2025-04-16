@@ -9,7 +9,7 @@ from sys import argv
 import random
 random.seed(42)
 State.set_seed(42)
-from torch.optim import AdamW
+from torch.optim import Adam
 import torch.nn.functional as F
 from torch.optim.lr_scheduler import LambdaLR
 from torch import save, cuda, zeros_like, cat, mean, std
