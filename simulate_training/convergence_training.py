@@ -108,7 +108,7 @@ elif config["dataset"] == "RedPyjamas":
     s = splits[rank % 4]
     world_data_size = world_size // 4
     rank_data_size = rank // 4
-    ds = RedPyjama(tokenizer,batch_size=batch_size, seq_l=seq_l,group=s,skip=start_iter*(world_size*mb_count) + validation_amount*2)
+    ds = RedPyjama(tokenizer,batch_size=batch_size, seq_l=seq_l,group="default",skip=start_iter*(world_data_size*mb_count) + validation_amount*2)
     validation_dataset = RedPyjama(tokenizer,batch_size=16, seq_l=seq_l,group=s)
 elif config["dataset"] == "TinyStories":
     ds = TinyStories(tokenizer,batch_size=batch_size, seq_l=seq_l,skip=start_iter*(world_size*mb_count))
@@ -339,6 +339,8 @@ for itr in range(max_iterations):
         print("time:",time()-t1)
         
         cuda.empty_cache()
+    except StopIteration:
+        iter_ds = iter(ds)
     except Exception:
         print(traceback.format_exc())
 
