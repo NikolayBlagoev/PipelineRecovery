@@ -25,7 +25,7 @@ rank = int(argv[3])
 os.environ["MASTER_ADDR"] = "localhost"
 world_size = int(argv[4])
 os.environ["MASTER_PORT"] = "29500"
-h_failure_probability = int(argv[5])/100
+h_failure_probability = int(argv[5])
 dist.init_process_group("gloo", rank=rank, world_size=world_size)
 start_iter = int(argv[7]) if len(argv) > 7 else 0
 with open(argv[6],"r") as fd:
@@ -160,15 +160,16 @@ for _ in range(mb_count):
 t1 = (time() - t1)
 # 60 MB/s or ~480Mb/s
 t1 += len(stages)*mb_size / (0.06*1024**3) # in reality you will do multiple waves
-t1 += len(stages)*0.5 # account for trailing and other delays
-t1 = t1 * 4 # in reality you will do multiple waves
+t1 += len(stages)*0.3 # account for trailing and other delays
+t1 = t1 * 3 # in reality you will do multiple waves
 print("time for F to B",t1 * 2.5) # backwards is a bit slower
 print("time for dp", (3*world_size - 1) * sum(vls[-1][1]) * 8 / (0.06*1024**3))
 total_time = t1 * 2.5 + (3*world_size - 1) * sum(vls[-1][1]) * 8 / (0.06*1024**3)
-total_time *=  2 # synchronisation
+total_time *=  1.1 # synchronisation
 print("total time per iteration ", total_time)
 iterations_per_h = 60*60 / total_time 
 print(60*60 / total_time, 100 - h_failure_probability)
+
 iter_success_probability = ((100 - h_failure_probability)/100)**(total_time / 3600)
 print("Iteration failure probability ", 1 - iter_success_probability)
 for itr in range(max_iterations):
