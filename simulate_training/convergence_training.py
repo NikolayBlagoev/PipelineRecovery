@@ -201,7 +201,7 @@ for itr in range(max_iterations):
             while flg:
                 flg = False
                 try:
-                    while idx < rank_data_size:
+                    while idx < world_data_size:
                         if idx == rank_data_size:
                             x = next(iter_ds)
                             x = x.to(device)
