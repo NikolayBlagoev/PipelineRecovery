@@ -102,17 +102,17 @@ prev_gradient_norm = [1 for _ in range(len(stages))]
 
 if config["dataset"] == "OpenWebText":
     ds = OpenWebText(tokenizer,batch_size=batch_size, seq_l=seq_l,skip=start_iter*(world_size*mb_count) + validation_amount*2)
-    validation_dataset = OpenWebText(tokenizer,batch_size=batch_size, seq_l=seq_l)
+    validation_dataset = OpenWebText(tokenizer,batch_size=16, seq_l=seq_l)
 elif config["dataset"] == "RedPyjamas":
     splits = ["arxiv","c4","common_crawl","wikipedia"]
     s = splits[rank % 4]
     world_data_size = world_size // 4
     rank_data_size = rank // 4
     ds = RedPyjama(tokenizer,batch_size=batch_size, seq_l=seq_l,group=s,skip=start_iter*(world_size*mb_count) + validation_amount*2)
-    validation_dataset = RedPyjama(tokenizer,batch_size=batch_size, seq_l=seq_l,group=s)
+    validation_dataset = RedPyjama(tokenizer,batch_size=16, seq_l=seq_l,group=s)
 elif config["dataset"] == "TinyStories":
     ds = TinyStories(tokenizer,batch_size=batch_size, seq_l=seq_l,skip=start_iter*(world_size*mb_count))
-    validation_dataset = TinyStories(tokenizer,batch_size=batch_size, seq_l=seq_l, split="validation")
+    validation_dataset = TinyStories(tokenizer,batch_size=16, seq_l=seq_l, split="validation")
 
 
 
