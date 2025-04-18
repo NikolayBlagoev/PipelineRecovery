@@ -35,7 +35,7 @@ dmodel = config["dmodel"]
 num_heads = config["num_heads"]
 n_layers_per_stage = config["n_layers_per_stage"]
 n_stages = config["n_stages"]
-seq_l = config["n_stages"]
+seq_l = config["seq_l"]
 batch_size = config["batch_size"]
 lr_scale = config["lr_scale"]
 mb_count = config["mb_count"]
@@ -79,6 +79,7 @@ if config["architecture"] == "LLaMa":
     stages = [s0]
 
     # Make the stages:
+    
     for _ in range(n_stages):
         stages.append(LLamaStage(dmodel=dmodel,num_heads=num_heads,
                     device=device, n_layers=n_layers_per_stage, ctx_size=seq_l,padding_idx=tokenizer.pad_id))
@@ -92,6 +93,7 @@ elif config["architecture"] == "GPT":
     for _ in range(n_stages):
         stages.append(GPTStage(dmodel=dmodel,num_heads=num_heads,
                     device=device, n_layers=n_layers_per_stage, ctx_size=seq_l))
+# print(len(stages))
 if start_iter > 0:
     for i,s in enumerate(stages):
         s.load_state_dict(torch.load(f"mdl_{i}.pth",map_location=device))
@@ -309,8 +311,7 @@ for itr in range(max_iterations):
             torch.nn.utils.clip_grad_norm_(s.parameters(),max_norm=1.0)
         
         for optim in optimizers:
-            optim.step()
-            optim.step()   
+            optim.step() 
             
         if itr % 100 == 0 and rank == 0:
             print("SAVING ITERATION",itr)
