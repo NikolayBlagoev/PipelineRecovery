@@ -320,7 +320,7 @@ for itr in range(max_iterations):
             print("SAVED")
         
         
-        if itr % 100 == 0:
+        if itr % 1000 == 0:
             perplxities = []
             normal_loss = []
             iter_vs = iter(validation_dataset)

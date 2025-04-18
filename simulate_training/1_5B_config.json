@@ -1,7 +1,7 @@
 {
     "dataset": "RedPyjamas",
     "architecture": "LLaMa",
-    "validation": 500,
+    "validation": 100,
     "dmodel": 2048,
     "num_heads": 16,
     "n_layers_per_stage": 4,
