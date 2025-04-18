@@ -164,8 +164,8 @@ t1 = (time() - t1)
 t1 += len(stages)*mb_size / (0.1*1024**3) # in reality you will do multiple waves
 t1 = t1 * 2 # in reality you will do multiple waves
 print("time for F to B",t1 * 2.5) # backwards is a bit slower
-print("time for dp", (2*world_size - 1) * sum(vls[-1][1]) * 8 / (0.1*1024**3))
-total_time = t1 * 2.5 + (2*world_size - 1) * sum(vls[-1][1]) * 8 / (0.1*1024**3)
+print("time for dp", (2*world_size - 1) * sum(vls[-1][1]) * 8 / (0.2*1024**3))
+total_time = t1 * 2.5 + (2*world_size - 1) * sum(vls[-1][1]) * 8 / (0.2*1024**3) # on same cluster large devices
 total_time *=  1 # synchronisation
 print("total time per iteration ", total_time)
 iterations_per_h = 60*60 / total_time 
