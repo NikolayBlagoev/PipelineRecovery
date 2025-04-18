@@ -1,7 +1,7 @@
 {
     "dataset": "OpenWebText",
     "architecture": "LLaMa",
-    "validation": 100,
+    "validation": 20,
     "dmodel": 1024,
     "num_heads": 16,
     "n_layers_per_stage": 4,
