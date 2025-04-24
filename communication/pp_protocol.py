@@ -476,6 +476,7 @@ class PPProtocl(AbstractProtocol):
                 log.write(f"Gradient received from {self._lower_get_peer(nodeid).pub_key}\n")
             self.put_on_queue(Gradients(0,data[1:]),bypass=True)
             if self.received_gradients >= self.stage_size - 1:
+                self.received_gradients = 0
                 self.put_on_queue(Aggregate(0),bypass=True)
             
 
