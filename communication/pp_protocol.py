@@ -276,12 +276,13 @@ class PPProtocl(AbstractProtocol):
         msg += int(1).to_bytes(1,"big") if self.has_weights else int(0).to_bytes(1,"big")
         loop = asyncio.get_event_loop()
         loop.create_task(self.send_datagram(msg, p.addr))
-        # await 
+
         return self.connected_callback(nodeid,peer)
         
  
     def process_datagram(self, addr: tuple[str, int], data: bytes):
-        
+        with open(f"log_stats_proj_2_{self.peer.pub_key}.txt", "a") as log:
+            log.write(f"datagram {data[0]} {addr}\n")
         
         if data[0] == PPProtocl.AGGREGATE_FLAG:
   
