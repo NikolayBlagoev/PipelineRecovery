@@ -208,7 +208,7 @@ class PPProtocl(AbstractProtocol):
 
                     continue
                 
-                elif isinstance(task, Gradients):
+                elif isinstance(task, SendGradients):
                     msg = bytearray()
                     msg += PPProtocl.GRADIENTS_FLAG.to_bytes(1,byteorder="big")
                     msg += task.data
@@ -224,6 +224,7 @@ class PPProtocl(AbstractProtocol):
                     p = await(self._lower_find_peer(SHA256(sndto)))
                     loop = asyncio.get_event_loop()
                     loop.create_task(self.send_stream(p.id_node,msg))
+
 
 
 
