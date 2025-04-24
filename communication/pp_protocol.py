@@ -53,6 +53,7 @@ class PPProtocl(AbstractProtocol):
         self.MAX_SEND = MAX_SEND
         self.mb_send = 0
         self.iteration = 0
+        self.received_aggregates = 0
         self.fail_at = fail_at
         self.meshid = meshid
         self.peers_without_weights = 0
