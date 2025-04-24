@@ -267,7 +267,7 @@ class PPProtocl(AbstractProtocol):
         self.subprocess.terminate()
         cuda.empty_cache()
         await super().stop()
-        self.crash_callback(True)
+        self.crash_callback.set_result(True)
         
         
     def put_on_queue(self,task):
@@ -455,6 +455,8 @@ class PPProtocl(AbstractProtocol):
                 self.deferred_tasks.clear()
         elif data[0] == PPProtocl.GRADIENTS_FLAG:
             self.received_gradients += 1
+            with open(f"log_stats_proj_2_{self.peer.pub_key}.txt", "a") as log:
+                log.write(f"Gradient received from {nodeid}\n")
             with open(f"log_stats_proj_2_{self.peer.pub_key}.txt", "a") as log:
                 log.write(f"Gradient received from {self._lower_get_peer(nodeid).pub_key}\n")
             self.put_on_queue(Gradients(0,data[1:]))
