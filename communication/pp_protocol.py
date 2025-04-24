@@ -231,6 +231,8 @@ class PPProtocl(AbstractProtocol):
                     
                     self.iteration += 1
                     if self.iteration == self.fail_at:
+                        with open(f"log_stats_proj_2_{self.peer.pub_key}.txt", "a") as log:
+                            log.write(f"FAILING\n")
                         msg = bytearray()
                         msg += PPProtocl.FORGET_ME.to_bytes(1,byteorder="big")
                         msg += self.peer.id_node
@@ -302,7 +304,7 @@ class PPProtocl(AbstractProtocol):
                 log.write(f"AGGREGATE RECEIVED\n")
             if self.received_aggregates >= 3:
                 with open(f"log_stats_proj_2_{self.peer.pub_key}.txt", "a") as log:
-                    log.write(f"AGGREGATING\n")
+                    log.write(f"AGGREGATING {self.iteration}\n")
                 self.received_aggregates = 0
                 self.processed.clear()
                 self.send_receives.clear()
@@ -314,8 +316,8 @@ class PPProtocl(AbstractProtocol):
             meshid = int.from_bytes(data[1:3],"big")
             stage = int.from_bytes(data[3:5],"big")
             nodeid = data[5:37]
-            with open(f"log_stats_proj_2_{self.peer.pub_key}.txt", "a") as log:
-                log.write(f"INTRODUCTION FROM {meshid} {stage} {data[37]} {len(data)} {self._lower_get_peer(nodeid)} {nodeid}\n")
+            # with open(f"log_stats_proj_2_{self.peer.pub_key}.txt", "a") as log:
+            #     log.write(f"INTRODUCTION FROM {meshid} {stage} {data[37]} {len(data)} {self._lower_get_peer(nodeid)} {nodeid}\n")
             has_weights = data[37] == 1
             self.peers[meshid] = LocalPeer(self._lower_get_peer(nodeid),stage,meshid,has_weights,nodeid)
             
