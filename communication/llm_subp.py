@@ -266,7 +266,7 @@ class SubP(object):
                         
                         tmp.append(param.grad.view(-1))
                     
-                    prev_grad = cat(tmp).to("cpu")
+                    prev_grad = torch.cat(tmp).to("cpu")
                     self.queue_out.put(SendGradients(task.frm,pickle.dumps(prev_grad)), True)
 
                 elif isinstance(task, Weights):
@@ -286,7 +286,7 @@ class SubP(object):
                         
                         tmp.append(param.view(-1))
                     
-                    prev_grad = cat(tmp).to("cpu")
+                    prev_grad = torch.cat(tmp).to("cpu")
                     self.queue_out.put(SendWeights(task.frm,pickle.dumps(prev_grad)), True)
                 
                 elif isinstance(task, Aggregate):
