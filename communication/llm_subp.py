@@ -275,7 +275,7 @@ class SubP(object):
                     self.queue_out.put(SendGradients(task.frm,pickle.dumps(prev_grad)), True)
 
                 elif isinstance(task, Weights):
-                    data = pickle.loads(task.data)
+                    data = pickle.loads(task.ldata)
                     tmp = torch.split(data, self.len_sizes)
                     for i, param in enumerate(self.net.parameters()):
                         param.data = tmp[i].view(self.sizes[i]).to(param.device).to(param.data.dtype)

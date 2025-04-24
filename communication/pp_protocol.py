@@ -280,7 +280,8 @@ class PPProtocl(AbstractProtocol):
             self.deferred_tasks.append(task)
     @bindfrom("connected_callback")
     def peer_connected(self, nodeid, peer: Peer):
-        
+        if not self.running:
+            return
         with open(f"log_stats_proj_2_{self.peer.pub_key}.txt", "a") as log:
                 log.write(f"CONNECTED WITH {peer.pub_key}\n")
         for p in self.peers.values():
@@ -395,7 +396,8 @@ class PPProtocl(AbstractProtocol):
 
     @bindfrom("stream_callback")
     def process_data(self, data:bytes, nodeid, addr):
-
+        if not self.running:
+            return
         if data[0] == PPProtocl.FORWARD_FLAG:
             
             bid = int.from_bytes(data[1:5],byteorder="big")
