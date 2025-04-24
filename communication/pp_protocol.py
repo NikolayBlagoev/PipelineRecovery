@@ -306,9 +306,7 @@ class PPProtocl(AbstractProtocol):
                 with open(f"log_stats_proj_2_{self.peer.pub_key}.txt", "a") as log:
                     log.write(f"AGGREGATING {self.iteration}\n")
                 self.received_aggregates = 0
-                self.processed.clear()
-                self.send_receives.clear()
-                self.deferred.clear()
+                
                 self.memory = self.MAX_MEM
                 self.put_on_queue(Aggregate(0))
         elif data[0] == PPProtocl.INTRODUCTION:
