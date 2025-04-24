@@ -116,7 +116,7 @@ class PPProtocl(AbstractProtocol):
         self.mb_send = 0
         self.send_receives.clear()
         self.received_aggregates += 1
-        self.queue_out.put(Aggregate(0), True)
+        self.queue_out.put(SendGradients(0,None), True)
         msg = bytearray()
         msg += PPProtocl.AGGREGATE_FLAG.to_bytes(1,byteorder="big")
 
