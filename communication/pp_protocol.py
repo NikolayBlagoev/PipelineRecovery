@@ -311,7 +311,7 @@ class PPProtocl(AbstractProtocol):
                     log.write(f"AGGREGATING {self.iteration}\n")
                 self.received_aggregates = 0
                 
-                self.memory = self.MAX_MEM
+                self.memory = self.MAX_MEMORY
                 self.put_on_queue(SendGradients(0, None))
         elif data[0] == PPProtocl.INTRODUCTION:
             
