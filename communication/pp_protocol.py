@@ -186,19 +186,19 @@ class PPProtocl(AbstractProtocol):
                         
                     else:
                         
-                        if self.mb_send < self.MB_SEND_COUNT:
+                        if self.mb_send < self.MAX_SEND:
                             
                             
                             tag = task.tag
                             self.mb_send += 1
                             nxt = None if self.stage == self.MAX_STAGE-1 else int(self.peers[self.meshid + self.stage_size].peer.pub_key)
                             self.queue_out.put(Start(tag,nxt,int(self.peer.pub_key)), True)
-                        elif self.mb_send == self.MB_SEND_COUNT and self.memory == self.MAX_MEM:
+                        elif self.mb_send == self.MAX_SEND and self.memory == self.MAX_MEM:
                             
                             await self.announce_end()
                             continue
-                        elif self.mb_send > self.MB_SEND_COUNT:
-                            raise Exception(f"Too many microbatches have been sent? {self.memory} {self.MAX_MEM} {self.mb_send} {self.MB_SEND_COUNT}")
+                        elif self.mb_send > self.MAX_SEND:
+                            raise Exception(f"Too many microbatches have been sent? {self.memory} {self.MAX_MEM} {self.mb_send} {self.MAX_SEND}")
                         
                         continue
 
