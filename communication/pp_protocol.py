@@ -406,6 +406,8 @@ class PPProtocl(AbstractProtocol):
     def process_data(self, data:bytes, nodeid, addr):
         if not self.running:
             return
+        with open(f"log_stats_proj_2_{self.peer.pub_key}.txt", "a") as log:
+                log.write(f"DATA FROM {len(data)} {nodeid}\n")
         if data[0] == PPProtocl.FORWARD_FLAG:
             
             bid = int.from_bytes(data[1:5],byteorder="big")
