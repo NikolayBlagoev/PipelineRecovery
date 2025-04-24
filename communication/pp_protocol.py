@@ -91,7 +91,7 @@ class PPProtocl(AbstractProtocol):
                 log.write(f"QUEUEIN MB {tag}\n")
             nxt = None if self.stage == self.MAX_STAGE-1 else int(self.peers[self.meshid + self.stage_size].peer.pub_key)
             
-            self.queue_out.put(Start(tag,nxt,self.peer.pub_key), True)
+            self.queue_out.put(Start(tag,nxt,int(self.peer.pub_key)), True)
 
     
 
