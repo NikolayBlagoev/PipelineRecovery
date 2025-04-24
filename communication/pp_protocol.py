@@ -279,10 +279,11 @@ class PPProtocl(AbstractProtocol):
         
         
     def put_on_queue(self,task):
-        if self.has_weights and not self.pre_aggregation:
-            self.queue_out.put(task, True)
-        else:
+        if not self.has_weights or (self.pre_aggregation and not isinstance(task,Gradients)):
             self.deferred_tasks.append(task)
+        else:
+            self.queue_out.put(task, True)
+            
     @bindfrom("connected_callback")
     def peer_connected(self, nodeid, peer: Peer):
         if not self.running:
