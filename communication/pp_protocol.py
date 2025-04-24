@@ -275,7 +275,7 @@ class PPProtocl(AbstractProtocol):
         msg += self.peer.id_node
         msg += int(1).to_bytes(1,"big") if self.has_weights else int(0).to_bytes(1,"big")
         with open(f"log_stats_proj_2_{self.peer.pub_key}.txt", "a") as log:
-            log.write(f"INTRODUCING TO {peer.pub_key} {msg[0]} {peer.addr}\n")
+            log.write(f"INTRODUCING TO {peer.pub_key} {msg[0]} {peer.addr} {self.peer.id_node}\n")
         loop = asyncio.get_event_loop()
         loop.create_task(self.send_datagram(msg, peer.addr))
 
@@ -283,8 +283,7 @@ class PPProtocl(AbstractProtocol):
         
  
     def process_datagram(self, addr: tuple[str, int], data: bytes):
-        with open(f"log_stats_proj_2_{self.peer.pub_key}.txt", "a") as log:
-            log.write(f"datagram {data[0]} {addr}\n")
+        
         
         if data[0] == PPProtocl.AGGREGATE_FLAG:
   
@@ -306,7 +305,7 @@ class PPProtocl(AbstractProtocol):
             stage = int.from_bytes(data[3:5],"big")
             nodeid = data[5:37]
             with open(f"log_stats_proj_2_{self.peer.pub_key}.txt", "a") as log:
-                log.write(f"INTRODUCTION FROM {meshid} {stage} {data[37]}\n")
+                log.write(f"INTRODUCTION FROM {meshid} {stage} {data[37]} {len(data)} {self._lower_get_peer(nodeid)} {nodeid}\n")
             has_weights = data[37] == 1
             self.peers[meshid] = LocalPeer(self._lower_get_peer(nodeid),stage,meshid,has_weights)
             
