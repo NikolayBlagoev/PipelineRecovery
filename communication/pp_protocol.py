@@ -332,12 +332,17 @@ class PPProtocl(AbstractProtocol):
                 self.same_stage_without_weights += 1
             
             if not self.has_weights and self.same_stage_without_weights >= self.stage_size - 1:
+                
                 if self.stage == 1:
                     self.request_lr[0] = True
                 elif self.stage == self.MAX_STAGE - 1:
                     self.request_lr[1] = True
                 for p in self.peers.values():
+                    if p.peer == None:
+                        continue
                     if self.stage > 1 and p.stage == self.stage - 1 and not self.request_lr[0]:
+                        with open(f"log_stats_proj_2_{self.peer.pub_key}.txt", "a") as log:
+                            log.write(f"Requesting weights from {p.peer.pub_key}\n")
                         self.request_lr[0] = True
                         msg = bytearray()
                         msg += PPProtocl.MODEL_REQUEST_FLAG.to_bytes(1,byteorder="big")
@@ -345,6 +350,8 @@ class PPProtocl(AbstractProtocol):
                         loop = asyncio.get_event_loop()
                         loop.create_task(self.send_datagram(msg, p.peer.addr))
                     elif self.stage < self.MAX_STAGE - 1 and p.stage == self.stage + 1 and not self.request_lr[1]:
+                        with open(f"log_stats_proj_2_{self.peer.pub_key}.txt", "a") as log:
+                            log.write(f"Requesting weights from {p.peer.pub_key}\n")
                         self.request_lr[1] = True
                         msg = bytearray()
                         msg += PPProtocl.MODEL_REQUEST_FLAG.to_bytes(1,byteorder="big")

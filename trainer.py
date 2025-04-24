@@ -101,7 +101,7 @@ if __name__ == '__main__':
                     MAX_STAGE=len(partitions), MAX_SEND = 6, 
                     stage_size = len(partitions[0]), has_weights=has_weights,
                     queue_in=queue_in, queue_out=queue_out, subprocess=subprocess,
-                    crash_callback=cb, fail_at=100 if own_stage != 3 else 5)
+                    crash_callback=cb, fail_at=100 if own_stage != 3 else 2)
         trainingp.set_lower(delayer)
         
         subprocess.start()
