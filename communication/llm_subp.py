@@ -253,6 +253,9 @@ class SubP(object):
                     data = pickle.loads(task.data)
                     tmp = torch.split(data, self.len_sizes)
                     for i, param in enumerate(self.net.parameters()):
+                        if param.grad == None:
+                            para.grad = tmp[i].view(self.sizes[i]).to(param.device).to(param.data.dtype)
+                            continue
                         param.grad += tmp[i].view(self.sizes[i]).to(param.device).to(param.data.dtype)
                         
                     
