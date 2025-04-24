@@ -46,7 +46,8 @@ class PPProtocl(AbstractProtocol):
         self.connected_callback = lambda *args : ...
         self.crash_callback = crash_callback
 
-        
+        self.memory = 3
+        self.MAX_MEMORY = 3
         self.stage = stage
         self.MAX_STAGE = MAX_STAGE
         self.MAX_SEND = MAX_SEND
@@ -91,7 +92,7 @@ class PPProtocl(AbstractProtocol):
             with open(f"log_stats_proj_2_{self.peer.pub_key}.txt", "a") as log:
                 log.write(f"QUEUEIN MB {tag}\n")
             nxt = None if self.stage == self.MAX_STAGE-1 else int(self.peers[self.meshid + self.stage_size].peer.pub_key)
-            
+            self.memory -= 1
             self.queue_out.put(Start(tag,nxt,int(self.peer.pub_key)), True)
 
     
@@ -185,20 +186,21 @@ class PPProtocl(AbstractProtocol):
                             log.write(f"Sending BACKWARD {sndto} {task.tag} {time()} {len(msg)}\n")
                         
                     else:
-                        
+                        self.memory += 1
                         if self.mb_send < self.MAX_SEND:
                             
                             
                             tag = task.tag
                             self.mb_send += 1
+                            self.memory -= 1
                             nxt = None if self.stage == self.MAX_STAGE-1 else int(self.peers[self.meshid + self.stage_size].peer.pub_key)
                             self.queue_out.put(Start(tag,nxt,int(self.peer.pub_key)), True)
-                        elif self.mb_send == self.MAX_SEND and self.memory == self.MAX_MEM:
+                        elif self.mb_send == self.MAX_SEND and self.memory == self.MAX_MEMORY:
                             
                             await self.announce_end()
                             continue
                         elif self.mb_send > self.MAX_SEND:
-                            raise Exception(f"Too many microbatches have been sent? {self.memory} {self.MAX_MEM} {self.mb_send} {self.MAX_SEND}")
+                            raise Exception(f"Too many microbatches have been sent? {self.memory} {self.MAX_MEMORY} {self.mb_send} {self.MAX_SEND}")
                         
                         continue
 
