@@ -193,6 +193,7 @@ for itr in range(max_iterations):
         for s in range(len(stages)):
             stages[s].train()
             if s == 0:
+                # holds embedding and dembedding
                 continue
             can_fail = random.random() > iter_success_probability
             if can_fail:
