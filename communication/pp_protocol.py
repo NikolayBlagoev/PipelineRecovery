@@ -220,6 +220,8 @@ class PPProtocl(AbstractProtocol):
                         log.write(f"Sending GRADIENTS\n")
                     for p in self.peers.values():
                         if p.stage == self.stage:
+                            with open(f"log_stats_proj_2_{self.peer.pub_key}.txt", "a") as log:
+                                log.write(f"sending to {p.peer.pub_key}\n")
                             loop = asyncio.get_event_loop()
                             loop.create_task(self.send_stream(p.peer.id_node,msg))
                 elif isinstance(task, SendWeights):
