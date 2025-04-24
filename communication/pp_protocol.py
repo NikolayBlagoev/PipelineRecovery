@@ -66,6 +66,7 @@ class PPProtocl(AbstractProtocol):
         self.same_stage_without_weights = 0
         self.request_lr = [False,False]
         self.received_gradients = 0
+        self.running = True
         
         self.send_receives = dict()
         
@@ -239,6 +240,7 @@ class PPProtocl(AbstractProtocol):
                     if self.iteration == self.fail_at:
                         with open(f"log_stats_proj_2_{self.peer.pub_key}.txt", "a") as log:
                             log.write(f"FAILING\n")
+                        
                         msg = bytearray()
                         msg += PPProtocl.FORGET_ME.to_bytes(1,byteorder="big")
                         msg += self.peer.id_node
@@ -247,6 +249,7 @@ class PPProtocl(AbstractProtocol):
                             
                             loop.create_task(self.send_datagram(msg, p.peer.addr))
                         loop.create_task(self.stop())
+                        self.running = False
                         return
                     if self.stage != 0:
                         continue
