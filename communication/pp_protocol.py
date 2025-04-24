@@ -275,7 +275,7 @@ class PPProtocl(AbstractProtocol):
         msg += self.peer.id_node
         msg += int(1).to_bytes(1,"big") if self.has_weights else int(0).to_bytes(1,"big")
         with open(f"log_stats_proj_2_{self.peer.pub_key}.txt", "a") as log:
-            log.write(f"INTRODUCING TO {peer.pub_key} {msg[0]}\n")
+            log.write(f"INTRODUCING TO {peer.pub_key} {msg[0]} {p.addr}\n")
         loop = asyncio.get_event_loop()
         loop.create_task(self.send_datagram(msg, p.addr))
 
