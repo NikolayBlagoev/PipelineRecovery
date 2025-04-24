@@ -317,6 +317,8 @@ class PPProtocl(AbstractProtocol):
                 
                 self.memory = self.MAX_MEMORY
                 self.put_on_queue(SendGradients(0, None))
+        elif data[0] == PPProtocl.FORGET_ME:
+            self._lower_remove_peer(addr,data[1:])
         elif data[0] == PPProtocl.INTRODUCTION:
             
             meshid = int.from_bytes(data[1:3],"big")
