@@ -11,7 +11,7 @@ from traceback import print_exception, format_exc
 from .llm_subp import *
 from time import sleep, time
 from deccom.cryptofuncs.hash import SHA256
-
+#TODO: Better wait on receive until aggregating
 @dataclass
 class LocalPeer:
     peer: Peer
@@ -67,6 +67,7 @@ class PPProtocl(AbstractProtocol):
         self.request_lr = [False,False]
         self.received_gradients = 0
         self.running = True
+        self.pre_aggregation = False
         
         self.send_receives = dict()
         
@@ -251,6 +252,10 @@ class PPProtocl(AbstractProtocol):
                         loop.create_task(self.stop())
                         self.running = False
                         return
+                    self.pre_aggregation = False
+                    for v in self.deferred_tasks:
+                        self.put_on_queue(v)
+                    self.deferred_tasks.clear()
                     if self.stage != 0:
                         continue
                     
@@ -274,7 +279,7 @@ class PPProtocl(AbstractProtocol):
         
         
     def put_on_queue(self,task):
-        if self.has_weights:
+        if self.has_weights and not self.pre_aggregation:
             self.queue_out.put(task, True)
         else:
             self.deferred_tasks.append(task)
@@ -318,7 +323,7 @@ class PPProtocl(AbstractProtocol):
                 with open(f"log_stats_proj_2_{self.peer.pub_key}.txt", "a") as log:
                     log.write(f"AGGREGATING {self.iteration}\n")
                 self.received_aggregates = 0
-                
+                self.pre_aggregation = True
                 self.memory = self.MAX_MEMORY
                 self.put_on_queue(SendGradients(0, None))
         elif data[0] == PPProtocl.FORGET_ME:
