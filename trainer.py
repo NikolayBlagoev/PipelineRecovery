@@ -71,7 +71,7 @@ if __name__ == '__main__':
         gossip.set_lower(protocol)
         stream = StreamProtocol(False)
         stream.set_lower(gossip)
-        delayer = DelayProtocol(delay_map,True)
+        delayer = DelayProtocol(delay_map,False)
         delayer.set_lower(stream)
         n = Peer(("127.0.0.1", 10015))
         if curr_id != 0:
