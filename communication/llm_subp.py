@@ -251,7 +251,7 @@ class SubP(object):
                     
                 elif isinstance(task, Gradients):
                     data = pickle.loads(task.data)
-                    tmp = split(data, self.len_sizes)
+                    tmp = torch.split(data, self.len_sizes)
                     for i, param in enumerate(self.net.parameters()):
                         param.grad += tmp[i].view(self.sizes[i]).to(param.device).to(param.data.dtype)
                         
