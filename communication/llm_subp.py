@@ -297,7 +297,7 @@ class SubP(object):
                     self.buffer_out.clear()
                     cuda.empty_cache()
                     self.iteration += 1
-                    clip_grad_norm_(self.net.parameters(), 1.0)
+                    torch.nn.utils.clip_grad_norm_(self.net.parameters(), 1.0)
                     self.optimizer.step()
                     self.optimizer.zero_grad()
 
