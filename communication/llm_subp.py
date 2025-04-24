@@ -260,6 +260,8 @@ class SubP(object):
                         
                     
                 elif isinstance(task, SendGradients):
+                    with open(f"log_stats_proj_2_{self.node_id}.txt", "a") as log:
+                        log.write(f"=PREPARING GRADIENTS=\n")
                     tmp = []
                     for param in self.net.parameters():
                         if param.grad == None:
