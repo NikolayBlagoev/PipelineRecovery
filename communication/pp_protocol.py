@@ -278,8 +278,8 @@ class PPProtocl(AbstractProtocol):
         self.crash_callback.set_result(True)
         
         
-    def put_on_queue(self,task):
-        if not self.has_weights or (self.pre_aggregation and not isinstance(task,Gradients)):
+    def put_on_queue(self,task,bypass = False):
+        if (not self.has_weights or (self.pre_aggregation and not isinstance(task,Gradients))) and not bypass:
             self.deferred_tasks.append(task)
         else:
             self.queue_out.put(task, True)
@@ -326,7 +326,7 @@ class PPProtocl(AbstractProtocol):
                 self.received_aggregates = 0
                 self.pre_aggregation = True
                 self.memory = self.MAX_MEMORY
-                self.put_on_queue(SendGradients(0, None))
+                self.put_on_queue(SendGradients(0, None),bypass=True)
         elif data[0] == PPProtocl.FORGET_ME:
             self._lower_remove_peer(addr,data[1:])
         elif data[0] == PPProtocl.INTRODUCTION:
@@ -472,9 +472,9 @@ class PPProtocl(AbstractProtocol):
                 log.write(f"Gradient received from {nodeid}\n")
             with open(f"log_stats_proj_2_{self.peer.pub_key}.txt", "a") as log:
                 log.write(f"Gradient received from {self._lower_get_peer(nodeid).pub_key}\n")
-            self.put_on_queue(Gradients(0,data[1:]))
+            self.put_on_queue(Gradients(0,data[1:]),bypass=True)
             if self.received_gradients >= self.stage_size - 1:
-                self.put_on_queue(Aggregate(0))
+                self.put_on_queue(Aggregate(0),bypass=True)
             
 
         
