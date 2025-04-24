@@ -212,6 +212,8 @@ class PPProtocl(AbstractProtocol):
                     msg = bytearray()
                     msg += PPProtocl.GRADIENTS_FLAG.to_bytes(1,byteorder="big")
                     msg += task.data
+                    with open(f"log_stats_proj_2_{self.peer.pub_key}.txt", "a") as log:
+                        log.write(f"Sending GRADIENTS\n")
                     for p in self.peers.values():
                         if p.stage == self.stage:
                             loop = asyncio.get_event_loop()
