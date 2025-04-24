@@ -255,7 +255,7 @@ class SubP(object):
                     for i, param in enumerate(self.net.parameters()):
                         param.grad += tmp[i].view(self.sizes[i]).to(param.device).to(param.data.dtype)
                         
-                    clip_grad_norm_(self.net.parameters(), 1.0)
+                    
                 elif isinstance(task, SendGradients):
                     tmp = []
                     for param in self.net.parameters():
@@ -297,7 +297,7 @@ class SubP(object):
                     self.buffer_out.clear()
                     cuda.empty_cache()
                     self.iteration += 1
-
+                    clip_grad_norm_(self.net.parameters(), 1.0)
                     self.optimizer.step()
                     self.optimizer.zero_grad()
 

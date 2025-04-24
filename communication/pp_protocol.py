@@ -65,6 +65,7 @@ class PPProtocl(AbstractProtocol):
         self.store_other = None
         self.same_stage_without_weights = 0
         self.request_lr = [False,False]
+        self.received_gradients = 0
         
         self.send_receives = dict()
         
@@ -308,7 +309,7 @@ class PPProtocl(AbstractProtocol):
                 self.received_aggregates = 0
                 
                 self.memory = self.MAX_MEM
-                self.put_on_queue(Aggregate(0))
+                self.put_on_queue(SendGradients(0, None))
         elif data[0] == PPProtocl.INTRODUCTION:
             
             meshid = int.from_bytes(data[1:3],"big")
@@ -446,8 +447,12 @@ class PPProtocl(AbstractProtocol):
                     self.put_on_queue(v)
                 self.deferred_tasks.clear()
         elif data[0] == PPProtocl.GRADIENTS_FLAG:
-           
+            self.received_gradients += 1
+            with open(f"log_stats_proj_2_{self.peer.pub_key}.txt", "a") as log:
+                log.write(f"Gradient received from {self._lower_get_peer(nodeid).pub_key}\n")
             self.put_on_queue(Gradients(0,data[1:]))
+            if self.received_gradients >= self.stage_size - 1:
+                self.put_on_queue(Aggregate(0))
             
 
         
