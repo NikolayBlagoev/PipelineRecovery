@@ -18,6 +18,7 @@ class LocalPeer:
     stage: int
     meshid: int
     has_weights: bool
+    node_id: bytes
 '''
 Responsible for communication
 '''
@@ -268,6 +269,9 @@ class PPProtocl(AbstractProtocol):
         
         with open(f"log_stats_proj_2_{self.peer.pub_key}.txt", "a") as log:
                 log.write(f"CONNECTED WITH {peer.pub_key}\n")
+        for p in self.peers.values():
+            if p.node_id == nodeid:
+                p.peer = peer
         msg = bytearray()
         msg += PPProtocl.INTRODUCTION.to_bytes(1,byteorder="big")
         msg += int(self.meshid).to_bytes(2,"big")
@@ -307,7 +311,7 @@ class PPProtocl(AbstractProtocol):
             with open(f"log_stats_proj_2_{self.peer.pub_key}.txt", "a") as log:
                 log.write(f"INTRODUCTION FROM {meshid} {stage} {data[37]} {len(data)} {self._lower_get_peer(nodeid)} {nodeid}\n")
             has_weights = data[37] == 1
-            self.peers[meshid] = LocalPeer(self._lower_get_peer(nodeid),stage,meshid,has_weights)
+            self.peers[meshid] = LocalPeer(self._lower_get_peer(nodeid),stage,meshid,has_weights,nodeid)
             
             # Weight recovery
             if not self.has_weights and not self.requested and has_weights and stage == self.stage:
