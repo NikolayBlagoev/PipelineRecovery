@@ -271,6 +271,8 @@ class PPProtocl(AbstractProtocol):
                 log.write(f"CONNECTED WITH {peer.pub_key}\n")
         for p in self.peers.values():
             if p.node_id == nodeid:
+                with open(f"log_stats_proj_2_{self.peer.pub_key}.txt", "a") as log:
+                    log.write(f"LINKED TO {peer.pub_key}\n")
                 p.peer = peer
         msg = bytearray()
         msg += PPProtocl.INTRODUCTION.to_bytes(1,byteorder="big")
