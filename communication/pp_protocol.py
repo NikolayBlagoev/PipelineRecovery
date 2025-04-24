@@ -45,7 +45,7 @@ class PPProtocl(AbstractProtocol):
         self.connected_callback = lambda *args : ...
         self.crash_callback = crash_callback
 
-        self.communication = communication
+        
         self.stage = stage
         self.MAX_STAGE = MAX_STAGE
         self.MAX_SEND = MAX_SEND
@@ -89,7 +89,7 @@ class PPProtocl(AbstractProtocol):
             self.mb_send += 1
             with open(f"log_stats_proj_2_{self.peer.pub_key}.txt", "a") as log:
                 log.write(f"QUEUEIN MB {tag}\n")
-            nxt = self.communication(tag,self.peer.pub_key)
+            nxt = None if self.stage == self.MAX_STAGE-1 else int(self.peers[self.meshid + self.stage_size].peer.pub_key)
             
             self.queue_out.put(Start(tag,nxt,self.peer.pub_key), True)
 
@@ -190,7 +190,7 @@ class PPProtocl(AbstractProtocol):
                             
                             tag = task.tag
                             self.mb_send += 1
-                            nxt = self.communication(tag,self.peer.pub_key)
+                            nxt = None if self.stage == self.MAX_STAGE-1 else int(self.peers[self.meshid + self.stage_size].peer.pub_key)
                             self.queue_out.put(Start(tag,nxt,int(self.peer.pub_key)), True)
                         elif self.mb_send == self.MB_SEND_COUNT and self.memory == self.MAX_MEM:
                             
