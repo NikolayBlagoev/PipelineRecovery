@@ -96,7 +96,7 @@ if __name__ == '__main__':
         if curr_id > 18:
             device = "cuda:7"
         cb = loop.create_future()
-        subprocess = Process(target=run_p,args=(queue_out,queue_in,curr_id,own_stage,seq_l,n_layers,batch_size,dmodel,num_heads,memory,compute_time,send_mbs, device)) 
+        subprocess = Process(target=run_p,args=(queue_out,queue_in,curr_id,own_stage,seq_l,n_layers,batch_size,dmodel,num_heads,send_mbs, device)) 
         trainingp = PPProtocl(stage=own_stage, meshid=meshid, 
                     MAX_STAGE=len(partitions), MAX_SEND = 6, 
                     stage_size = len(partitions[0]), has_weights=has_weights,
