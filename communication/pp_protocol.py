@@ -308,6 +308,8 @@ class PPProtocl(AbstractProtocol):
             self.received_aggregates += 1
             with open(f"log_stats_proj_2_{self.peer.pub_key}.txt", "a") as log:
                 log.write(f"AGGREGATE RECEIVED\n")
+            if self.stage == 0:
+                return
             if self.received_aggregates >= 3:
                 with open(f"log_stats_proj_2_{self.peer.pub_key}.txt", "a") as log:
                     log.write(f"AGGREGATING {self.iteration}\n")
