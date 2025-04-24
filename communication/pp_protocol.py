@@ -89,6 +89,8 @@ class PPProtocl(AbstractProtocol):
         await asyncio.sleep(10)
         
         for b in range(3):
+            if self.memory == 0:
+                break
             tag = b
             self.mb_send += 1
             with open(f"log_stats_proj_2_{self.peer.pub_key}.txt", "a") as log:
