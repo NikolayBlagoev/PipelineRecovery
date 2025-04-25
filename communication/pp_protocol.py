@@ -256,8 +256,9 @@ class PPProtocl(AbstractProtocol):
                         self.running = False
                         return
                     self.pre_aggregation = False
-                    if self.iteration % 100 == 1:
-                        self.put_on_queue(SendWeights(0,None))
+                    if self.strategy == "checkpoint":
+                        if self.iteration % 100 == 1 and self.stage != 0:
+                            self.put_on_queue(SendWeights(0,None))
 
                     
                     for v in self.deferred_tasks:
