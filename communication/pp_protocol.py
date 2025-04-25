@@ -521,6 +521,8 @@ class PPProtocl(AbstractProtocol):
                         self.put_on_queue(v)
                     self.deferred_tasks.clear()
             else:
+                with open(f"log_stats_proj_2_{self.peer.pub_key}.txt", "a") as log:
+                    log.write(f"Received weights!!\n")
                 self.has_weights = True
                 self.put_on_queue(Weights(0,data[1:],None))
                 for v in self.deferred_tasks:
