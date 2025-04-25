@@ -504,12 +504,19 @@ class PPProtocl(AbstractProtocol):
                 return
             if self.has_weights:
                 return
-            if self.same_stage_without_weights >= self.stage_size - 1 and self.stage != 1 and self.stage != self.MAX_STAGE - 1:
-                if self.store_other == None:
-                    self.store_other = data[1:]
+            if self.strategy == "ours":
+                if self.same_stage_without_weights >= self.stage_size - 1 and self.stage != 1 and self.stage != self.MAX_STAGE - 1:
+                    if self.store_other == None:
+                        self.store_other = data[1:]
+                    else:
+                        self.has_weights = True
+                        self.put_on_queue(Weights(0,data[1:],self.store_other))
+                        for v in self.deferred_tasks:
+                            self.put_on_queue(v)
+                        self.deferred_tasks.clear()
                 else:
                     self.has_weights = True
-                    self.put_on_queue(Weights(0,data[1:],self.store_other))
+                    self.put_on_queue(Weights(0,data[1:],None))
                     for v in self.deferred_tasks:
                         self.put_on_queue(v)
                     self.deferred_tasks.clear()
@@ -519,6 +526,7 @@ class PPProtocl(AbstractProtocol):
                 for v in self.deferred_tasks:
                     self.put_on_queue(v)
                 self.deferred_tasks.clear()
+
         elif data[0] == PPProtocl.GRADIENTS_FLAG:
             self.received_gradients += 1
             with open(f"log_stats_proj_2_{self.peer.pub_key}.txt", "a") as log:
