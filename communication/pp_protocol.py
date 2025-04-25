@@ -389,7 +389,7 @@ class PPProtocl(AbstractProtocol):
                             loop.create_task(self.send_datagram(msg, p.peer.addr))
                 elif self.strategy == "checkpoint":
                     
-                    if stage == 0 and not self.has_weights and not self.requested:
+                    if not self.has_weights and not self.requested:
                         with open(f"log_stats_proj_2_{self.peer.pub_key}.txt", "a") as log:
                             log.write(f"NEED WEIGHTS \n")
                         for p in self.peers.values():
