@@ -388,7 +388,7 @@ class PPProtocl(AbstractProtocol):
                             msg += self.peer.id_node
                             loop = asyncio.get_event_loop()
                             loop.create_task(self.send_datagram(msg, p.peer.addr))
-                elif self.strategy == "checkpoint":
+            elif self.strategy == "checkpoint":
                     with open(f"log_stats_proj_2_{self.peer.pub_key}.txt", "a") as log:
                             log.write(f"CHECK FOR WEIGHTS {self.has_weights} {self.requested}\n")
                     if not self.has_weights and not self.requested:
