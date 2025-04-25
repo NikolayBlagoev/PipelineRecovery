@@ -30,7 +30,7 @@ if __name__ == '__main__':
     f_rate = int(argv[3])
     
     with open(f"{f_rate}.json","r") as fd:
-        failures = json.loads(fd)
+        failures = json.load(fd)
 
     prev = 0
     failures = iter(failures[curr_id])
