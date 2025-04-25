@@ -342,8 +342,8 @@ class PPProtocl(AbstractProtocol):
             meshid = int.from_bytes(data[1:3],"big")
             stage = int.from_bytes(data[3:5],"big")
             nodeid = data[5:37]
-            # with open(f"log_stats_proj_2_{self.peer.pub_key}.txt", "a") as log:
-            #     log.write(f"INTRODUCTION FROM {meshid} {stage} {data[37]} {len(data)} {self._lower_get_peer(nodeid)} {nodeid}\n")
+            with open(f"log_stats_proj_2_{self.peer.pub_key}.txt", "a") as log:
+                log.write(f"INTRODUCTION FROM {meshid} {stage} {data[37]} {len(data)} {self._lower_get_peer(nodeid)} {nodeid}\n")
             has_weights = data[37] == 1
             self.peers[meshid] = LocalPeer(self._lower_get_peer(nodeid),stage,meshid,has_weights,nodeid)
             
@@ -388,7 +388,10 @@ class PPProtocl(AbstractProtocol):
                             loop = asyncio.get_event_loop()
                             loop.create_task(self.send_datagram(msg, p.peer.addr))
                 elif self.strategy == "checkpoint":
+                    
                     if stage == 0 and not self.has_weights and not self.requested:
+                        with open(f"log_stats_proj_2_{self.peer.pub_key}.txt", "a") as log:
+                            log.write(f"NEED WEIGHTS \n")
                         for p in self.peers.values():
                             if p.peer == None:
                                 continue
