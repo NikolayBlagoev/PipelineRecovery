@@ -46,6 +46,7 @@ class PPProtocl(AbstractProtocol):
         self.connected_callback = lambda *args : ...
         self.crash_callback = crash_callback
         self.strategy = strategy
+        print(self.strategy)
         self.memory = 3
         self.MAX_MEMORY = 3
         self.stage = stage
