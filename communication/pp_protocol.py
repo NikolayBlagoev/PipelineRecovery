@@ -422,7 +422,10 @@ class PPProtocl(AbstractProtocol):
                 with open(f"log_stats_proj_2_{self.peer.pub_key}.txt", "a") as log:
                     log.write(f"Need to send weights to {stage} {send_to}\n")
                 loop = asyncio.get_event_loop()
-                loop.create_task(self.send_stream(send_to,self.checkpoints[stage]))
+                msg = bytearray()
+                msg += PPProtocl.MODEL_RESPONSE_FLAG.to_bytes(1,byteorder="big")
+                msg += self.checkpoints[stage]
+                loop.create_task(self.send_stream(send_to,msg))
 
 
 
@@ -493,6 +496,8 @@ class PPProtocl(AbstractProtocol):
             del self.send_receives[bid]
             self.put_on_queue(Backward(bid, frm, nxt, originator, data[13:]))
         elif data[0] == PPProtocl.MODEL_RESPONSE_FLAG:
+            with open(f"log_stats_proj_2_{self.peer.pub_key}.txt", "a") as log:
+                log.write(f"Received weights!!\n")
             if self.peer.pub_key == str(0):
                 
                 stage = int(self._lower_get_peer(nodeid).pub_key)
@@ -516,7 +521,7 @@ class PPProtocl(AbstractProtocol):
                         self.deferred_tasks.clear()
                 else:
                     self.has_weights = True
-                    self.put_on_queue(Weights(0,data[1:],None))
+                    self.put_on_queue(Weights(0,data[1:],None), bypass=True)
                     for v in self.deferred_tasks:
                         self.put_on_queue(v)
                     self.deferred_tasks.clear()
