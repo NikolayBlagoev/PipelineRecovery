@@ -273,7 +273,7 @@ class SubP(object):
                     self.queue_out.put(SendGradients(task.frm,pickle.dumps(prev_grad)), True)
 
                 elif isinstance(task, Weights):
-                    if task.rdata != None:
+                    if task.rdata == None:
                         data = pickle.loads(task.ldata)
                         tmp = torch.split(data, self.len_sizes)
                         for i, param in enumerate(self.net.parameters()):
