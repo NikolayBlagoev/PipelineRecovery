@@ -393,6 +393,8 @@ class PPProtocl(AbstractProtocol):
                             if p.peer == None:
                                 continue
                             if p.peer.pub_key == str(0):
+                                with open(f"log_stats_proj_2_{self.peer.pub_key}.txt", "a") as log:
+                                    log.write(f"Requesting weights from {p.peer.pub_key}\n")
                                 self.requested = True
                                 msg = bytearray()
                                 msg += PPProtocl.MODEL_REQUEST_FLAG.to_bytes(1,byteorder="big")
