@@ -415,8 +415,12 @@ class PPProtocl(AbstractProtocol):
                 
                 self.put_on_queue(SendWeights(p.pub_key,None))
             elif self.strategy == "checkpoint":
+                
                 stage = int.from_bytes(data[1:3],byteorder="big")
+                
                 send_to = data[3:]
+                with open(f"log_stats_proj_2_{self.peer.pub_key}.txt", "a") as log:
+                    log.write(f"Need to send weights to {stage} {send_to}\n")
                 loop = asyncio.get_event_loop()
                 loop.create_task(self.send_stream(send_to,self.checkpoints[stage]))
 
@@ -494,8 +498,7 @@ class PPProtocl(AbstractProtocol):
                 stage = int(self._lower_get_peer(nodeid).pub_key)
                 stage = stage % 21
                 stage = stage // 3
-                with open(f"log_stats_proj_2_{self.peer.pub_key}.txt", "a") as log:
-                    log.write(f"Need to send weights to {stage}\n")
+                
 
                 self.checkpoints[stage] = data[1:]
                 return
