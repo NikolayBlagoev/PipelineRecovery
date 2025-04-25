@@ -28,7 +28,10 @@ if __name__ == '__main__':
     curr_id = int(argv[1])
     setting = argv[2]
     f_rate = int(argv[3])
-    failures = json.loads(f"{f_rate}.json")
+    
+    with open(f"{f_rate}.json","r") as fd:
+        failures = json.loads(fd)
+
     prev = 0
     failures = iter(failures[curr_id])
     loop = asyncio.new_event_loop()
