@@ -14,7 +14,7 @@ import json
 from communication.llm_subp import run_p
 from deccom.protocols.delayprotocol import DelayProtocol
 from pprint import pprint
-
+import json
 from communication.communication_costs import *
 seq_l = 1024
 n_layers = 4
@@ -27,9 +27,16 @@ num_heads = 16
 if __name__ == '__main__':
     curr_id = int(argv[1])
     setting = argv[2]
-
+    f_rate = int(argv[3])
+    failures = json.loads(f"{f_rate}.json")
+    prev = 0
+    failures = iter(failures[curr_id])
     loop = asyncio.new_event_loop()
     locations = get_locations()
+    send_mbs = 6
+    if setting == "redundant":
+        batch_size = batch_size / 2
+        send_mbs = send_mbs * 2
     def delay_map(currid,otherid):
         p1 = locations[int(currid) % len(locations)]
         p2 = locations[int(otherid) % len(locations)]
@@ -43,11 +50,6 @@ if __name__ == '__main__':
         return (ret[0] - 0.1,ret[1])
     loc = locations[int(curr_id) % len(locations)]
     world = 21
-    
-    
-
-    
-    
     partitions = [
         [0,1,2],
         [3,4,5],
@@ -59,13 +61,14 @@ if __name__ == '__main__':
     ]
     meshid = curr_id
     own_stage = curr_id // 3
-    send_mbs = 6
+    
     has_weights = True
     
     while True:
         my_peer  = Peer(None, pub_key=str(curr_id))
         port = None
-
+        fail_at = next(failures) - prev
+        prev += fail_at
         protocol = DefaultProtocol()
         gossip = KademliaDiscovery([],interval=30, always_split = True)
         gossip.set_lower(protocol)
@@ -101,7 +104,7 @@ if __name__ == '__main__':
                     MAX_STAGE=len(partitions), MAX_SEND = 6, 
                     stage_size = len(partitions[0]), has_weights=has_weights,
                     queue_in=queue_in, queue_out=queue_out, subprocess=subprocess,
-                    crash_callback=cb, fail_at=100 if own_stage != 3 else 2)
+                    crash_callback=cb, fail_at=fail_at, strategy=setting)
         trainingp.set_lower(delayer)
         
         subprocess.start()
@@ -113,6 +116,6 @@ if __name__ == '__main__':
         loop.run_until_complete(me.listen())
         loop.run_until_complete(cb)
         loop.run_until_complete(me.close())
-        has_weights = False
+        has_weights = setting == "redundant"
         curr_id += 21
         

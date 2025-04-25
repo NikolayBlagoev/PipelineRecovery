@@ -150,7 +150,7 @@ class SubP(object):
                     
                     with open(f"log_stats_proj_2_{self.node_id}.txt", "a") as log:
                         
-                        log.write(f"=======NEW MB:======== {task.tag}\n")
+                        log.write(f"=======NEW MB:======== {task.tag} {time()}\n")
                     
                     
                     x = next(self.dl)
@@ -171,8 +171,6 @@ class SubP(object):
                     continue
                 elif isinstance(task, Loss):
                     
-                    with open(f"log_stats_proj_2_{self.node_id}.txt", "a") as log:
-                        log.write(f"LOSSS {task.tag}\n")
                     
                     
                     x = pickle.loads(task.data)
@@ -191,7 +189,7 @@ class SubP(object):
                     
                     ret = x.grad
                     with open(f"log_stats_proj_2_{self.node_id}.txt", "a") as log:
-                        log.write(f"LOSS:{loss_report} \n") #
+                        log.write(f"LOSS {task.tag}:{loss_report} \n") #
                     # ret = ret.to("cpu")
                     
                     self.queue_out.put(Loss(task.tag, task.frm, task.to,  task.originator, pickle.dumps(ret)), True)
@@ -199,7 +197,7 @@ class SubP(object):
                 elif isinstance(task, Forward):
                     
                     with open(f"log_stats_proj_2_{self.node_id}.txt", "a") as log:
-                        log.write(f"Processing forward to {task.to}\n")
+                        log.write(f"Processing forward to {task.to} {time()}\n")
                     
                     x = pickle.loads(task.data)
                     
@@ -261,7 +259,7 @@ class SubP(object):
                     
                 elif isinstance(task, SendGradients):
                     with open(f"log_stats_proj_2_{self.node_id}.txt", "a") as log:
-                        log.write(f"=PREPARING GRADIENTS=\n")
+                        log.write(f"=PREPARING GRADIENTS= {time()}\n")
                     tmp = []
                     for param in self.net.parameters():
                         if param.grad == None:
@@ -275,11 +273,22 @@ class SubP(object):
                     self.queue_out.put(SendGradients(task.frm,pickle.dumps(prev_grad)), True)
 
                 elif isinstance(task, Weights):
-                    data = pickle.loads(task.ldata)
-                    tmp = torch.split(data, self.len_sizes)
-                    for i, param in enumerate(self.net.parameters()):
-                        param.data = tmp[i].view(self.sizes[i]).to(param.device).to(param.data.dtype)
-                        
+                    if task.rdata != None:
+                        data = pickle.loads(task.ldata)
+                        tmp = torch.split(data, self.len_sizes)
+                        for i, param in enumerate(self.net.parameters()):
+                            param.data = tmp[i].view(self.sizes[i]).to(param.device).to(param.data.dtype)
+                    else:
+                        datal = pickle.loads(task.ldata)
+                        tmpl = torch.split(datal, self.len_sizes)
+
+                        datar = pickle.loads(task.rdata)
+                        tmpr = torch.split(datar, self.len_sizes)
+                        for i, param in enumerate(self.net.parameters()):
+                            param.data = 0.5*tmpl[i].view(self.sizes[i]).to(param.device).to(param.data.dtype) + 0.5 * tmpr[i].view(self.sizes[i]).to(param.device).to(param.data.dtype)
+
+                    with open(f"log_stats_proj_2_{self.node_id}.txt", "a") as log:
+                        log.write(f"MODEL READY {time()}\n")
                     
                 elif isinstance(task, SendWeights):
                     tmp = []
@@ -296,8 +305,7 @@ class SubP(object):
                 
                 elif isinstance(task, Aggregate):
                     
-                    with open(f"log_stats_proj_2_{self.node_id}.txt", "a") as log:
-                        log.write(f"===AGGEGATING====\n")
+                    
                     self.buffer_in.clear()
                     self.buffer_out.clear()
                     cuda.empty_cache()
@@ -305,9 +313,11 @@ class SubP(object):
                     torch.nn.utils.clip_grad_norm_(self.net.parameters(), 1.0)
                     self.optimizer.step()
                     self.optimizer.zero_grad()
-
+                    
                     cuda.empty_cache()
                     self.queue_out.put(Aggregate(0), True)
+                    with open(f"log_stats_proj_2_{self.node_id}.txt", "a") as log:
+                        log.write(f"===AGGREGATING==== {self.iteration} {time()}\n")
                     
                     
         except Exception:

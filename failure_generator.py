@@ -1,12 +1,16 @@
 import random
-random.seed(21)
-hourly_failure_rate = 33
+import json
+r1 = random.Random()
+r2 = random.Random()
+r1.seed(33)
+hourly_failure_rate = 16
+r2.seed(hourly_failure_rate*5)
 p_fail = 0
 
 if hourly_failure_rate == 10:
     p_fail = 0.002
 elif hourly_failure_rate == 16:
-    p_fail == 0.004
+    p_fail = 0.004
 elif hourly_failure_rate == 33:
     p_fail = 0.01
 
@@ -22,27 +26,36 @@ stages = [
 ]
 failures = {}
 
-for itr in range(33000):
+for itr in range(500):
     # print("------")
+    if itr % 100 != 1:
+        stage_failure = r1.random() < p_fail
+        if stage_failure:
+            print(stage_failure,itr)
+        failed_stage = r2.randint(1,len(stages)-1) if stage_failure else -1
+    else:
+        failed_stage = -1
     for i,s in enumerate(stages):
         faults = 0
-        stage_failure = 2 if random.random() < 1 - (1 - p_fail)**len(s) else 1
-        
-        
+           
         for nd in s:
             if nd not in failures:
                 failures[nd] = []
-            if random.random() < 2 * p_fail and i > 0 and itr > 0:
-                faults += 1
-                failures[nd].append(random.randint(0,3))
-            else:
-                failures[nd].append(-1)
+            if failed_stage == i:
+                failures[nd].append(itr)
+           
+
+for v in failures.values():
+    v.append(501)
+with open(f"{hourly_failure_rate}.json", 'w') as fd:
+    json.dump(failures, fd)
+
+
             
                 
-        if faults == 3:
-            print("STAGE GONE",i,itr)
+        
        
     
-
+# print(failures)
 
 # print(failures)

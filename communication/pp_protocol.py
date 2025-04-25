@@ -35,7 +35,7 @@ class PPProtocl(AbstractProtocol):
     FORGET_ME = int.from_bytes(b'\x08', byteorder="big")
 
     
-    def __init__(self, stage, meshid, MAX_STAGE, fail_at, crash_callback, queue_in: Queue, queue_out: Queue, subprocess:Process, submodule=None, callback: Callable[[tuple[str, int], bytes], None] = lambda : ..., 
+    def __init__(self, stage, meshid, MAX_STAGE, fail_at, crash_callback, strategy, queue_in: Queue, queue_out: Queue, subprocess:Process, submodule=None, callback: Callable[[tuple[str, int], bytes], None] = lambda : ..., 
                     MAX_SEND = 6, stage_size = 0, has_weights = True):
         
         super().__init__(submodule, callback)
@@ -45,7 +45,7 @@ class PPProtocl(AbstractProtocol):
         self.disconnected_callback = lambda *args : ...
         self.connected_callback = lambda *args : ...
         self.crash_callback = crash_callback
-
+        self.strategy = strategy
         self.memory = 3
         self.MAX_MEMORY = 3
         self.stage = stage
@@ -68,6 +68,7 @@ class PPProtocl(AbstractProtocol):
         self.received_gradients = 0
         self.running = True
         self.pre_aggregation = False
+        self.checkpoints = {}
         
         self.send_receives = dict()
         
@@ -189,7 +190,7 @@ class PPProtocl(AbstractProtocol):
                         loop = asyncio.get_event_loop()
                         loop.create_task(self.send_stream(p.id_node,msg))
                         with open(f"log_stats_proj_2_{self.peer.pub_key}.txt", "a") as log:
-                            log.write(f"Sending BACKWARD {sndto} {task.tag} {time()} {len(msg)}\n")
+                            log.write(f"Sending BACKWARD {sndto} {task.tag} {time()}\n")
                         
                     else:
                         self.memory += 1
@@ -242,7 +243,7 @@ class PPProtocl(AbstractProtocol):
                     self.iteration += 1
                     if self.iteration == self.fail_at:
                         with open(f"log_stats_proj_2_{self.peer.pub_key}.txt", "a") as log:
-                            log.write(f"FAILING\n")
+                            log.write(f"FAILING {time()}\n")
                         
                         msg = bytearray()
                         msg += PPProtocl.FORGET_ME.to_bytes(1,byteorder="big")
@@ -255,6 +256,10 @@ class PPProtocl(AbstractProtocol):
                         self.running = False
                         return
                     self.pre_aggregation = False
+                    if self.iteration % 100 == 1:
+                        self.put_on_queue(SendWeights(0,None))
+
+                    
                     for v in self.deferred_tasks:
                         self.put_on_queue(v)
                     self.deferred_tasks.clear()
@@ -342,49 +347,72 @@ class PPProtocl(AbstractProtocol):
             self.peers[meshid] = LocalPeer(self._lower_get_peer(nodeid),stage,meshid,has_weights,nodeid)
             
             # Weight recovery
-            if not self.has_weights and not self.requested and has_weights and stage == self.stage:
-                self.requested = True
-                msg = bytearray()
-                msg += PPProtocl.MODEL_REQUEST_FLAG.to_bytes(1,byteorder="big")
-                msg += self.peer.id_node
-                loop = asyncio.get_event_loop()
-                loop.create_task(self.send_datagram(msg, addr))
+            if self.strategy == "ours":
+                if not self.has_weights and not self.requested and has_weights and stage == self.stage:
+                    self.requested = True
+                    msg = bytearray()
+                    msg += PPProtocl.MODEL_REQUEST_FLAG.to_bytes(1,byteorder="big")
+                    msg += self.peer.id_node
+                    loop = asyncio.get_event_loop()
+                    loop.create_task(self.send_datagram(msg, addr))
 
-            if not self.has_weights and stage == self.stage and not has_weights:
-                self.same_stage_without_weights += 1
-            
-            if not self.has_weights and self.same_stage_without_weights >= self.stage_size - 1:
+                if not self.has_weights and stage == self.stage and not has_weights:
+                    self.same_stage_without_weights += 1
                 
-                if self.stage == 1:
-                    self.request_lr[0] = True
-                elif self.stage == self.MAX_STAGE - 1:
-                    self.request_lr[1] = True
-                for p in self.peers.values():
-                    if p.peer == None:
-                        continue
-                    if self.stage > 1 and p.stage == self.stage - 1 and not self.request_lr[0]:
-                        with open(f"log_stats_proj_2_{self.peer.pub_key}.txt", "a") as log:
-                            log.write(f"Requesting weights from {p.peer.pub_key}\n")
+                if not self.has_weights and self.same_stage_without_weights >= self.stage_size - 1:
+                    
+                    if self.stage == 1:
                         self.request_lr[0] = True
-                        msg = bytearray()
-                        msg += PPProtocl.MODEL_REQUEST_FLAG.to_bytes(1,byteorder="big")
-                        msg += self.peer.id_node
-                        loop = asyncio.get_event_loop()
-                        loop.create_task(self.send_datagram(msg, p.peer.addr))
-                    elif self.stage < self.MAX_STAGE - 1 and p.stage == self.stage + 1 and not self.request_lr[1]:
-                        with open(f"log_stats_proj_2_{self.peer.pub_key}.txt", "a") as log:
-                            log.write(f"Requesting weights from {p.peer.pub_key}\n")
+                    elif self.stage == self.MAX_STAGE - 1:
                         self.request_lr[1] = True
-                        msg = bytearray()
-                        msg += PPProtocl.MODEL_REQUEST_FLAG.to_bytes(1,byteorder="big")
-                        msg += self.peer.id_node
-                        loop = asyncio.get_event_loop()
-                        loop.create_task(self.send_datagram(msg, p.peer.addr))
+                    for p in self.peers.values():
+                        if p.peer == None:
+                            continue
+                        if self.stage > 1 and p.stage == self.stage - 1 and not self.request_lr[0]:
+                            with open(f"log_stats_proj_2_{self.peer.pub_key}.txt", "a") as log:
+                                log.write(f"Requesting weights from {p.peer.pub_key}\n")
+                            self.request_lr[0] = True
+                            msg = bytearray()
+                            msg += PPProtocl.MODEL_REQUEST_FLAG.to_bytes(1,byteorder="big")
+                            msg += self.peer.id_node
+                            loop = asyncio.get_event_loop()
+                            loop.create_task(self.send_datagram(msg, p.peer.addr))
+                        elif self.stage < self.MAX_STAGE - 1 and p.stage == self.stage + 1 and not self.request_lr[1]:
+                            with open(f"log_stats_proj_2_{self.peer.pub_key}.txt", "a") as log:
+                                log.write(f"Requesting weights from {p.peer.pub_key}\n")
+                            self.request_lr[1] = True
+                            msg = bytearray()
+                            msg += PPProtocl.MODEL_REQUEST_FLAG.to_bytes(1,byteorder="big")
+                            msg += self.peer.id_node
+                            loop = asyncio.get_event_loop()
+                            loop.create_task(self.send_datagram(msg, p.peer.addr))
+                elif self.strategy == "checkpoint":
+                    if stage == 0 and not self.has_weights and not self.requested:
+                        for p in self.peers.values():
+                            if p.peer == None:
+                                continue
+                            if p.peer.pub_key == str(0):
+                                self.requested = True
+                                msg = bytearray()
+                                msg += PPProtocl.MODEL_REQUEST_FLAG.to_bytes(1,byteorder="big")
+                                msg += int(self.stage).to_bytes(2,byteorder="big")
+                                msg += self.peer.id_node
+                                loop = asyncio.get_event_loop()
+                                loop.create_task(self.send_datagram(msg, addr))
+                                break
 
         elif data[0] == PPProtocl.MODEL_REQUEST_FLAG:
-            p = self._lower_get_peer(data[1:])
-            
-            self.put_on_queue(SendWeights(p.pub_key,None))
+            if self.strategy == "ours":
+                p = self._lower_get_peer(data[1:])
+                
+                self.put_on_queue(SendWeights(p.pub_key,None))
+            elif self.strategy == "checkpoint":
+                stage = int.from_bytes(data[1:3],byteorder="big")
+                send_to = data[3:]
+                loop = asyncio.get_event_loop()
+                loop.create_task(self.send_stream(send_to,self.checkpoints[stage]))
+
+
 
         
         return
@@ -453,6 +481,13 @@ class PPProtocl(AbstractProtocol):
             del self.send_receives[bid]
             self.put_on_queue(Backward(bid, frm, nxt, originator, data[13:]))
         elif data[0] == PPProtocl.MODEL_RESPONSE_FLAG:
+            if self.peer.pub_key == str(0):
+                stage = int(self._lower_get_peer(nodeid).pub_key)
+                stage = stage % 21
+                stage = stage // 3
+
+                self.checkpoints[stage] = data[1:]
+                return
             if self.has_weights:
                 return
             if self.same_stage_without_weights >= self.stage_size - 1 and self.stage != 1 and self.stage != self.MAX_STAGE - 1:
