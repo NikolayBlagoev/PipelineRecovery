@@ -33,7 +33,7 @@ if __name__ == '__main__':
         failures = json.load(fd)
 
     prev = 0
-    failures = iter(failures[curr_id])
+    failures = iter(failures[str(curr_id)])
     loop = asyncio.new_event_loop()
     locations = get_locations()
     send_mbs = 6
