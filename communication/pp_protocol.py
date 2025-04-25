@@ -406,7 +406,7 @@ class PPProtocl(AbstractProtocol):
                                 msg += int(self.stage).to_bytes(2,byteorder="big")
                                 msg += self.peer.id_node
                                 loop = asyncio.get_event_loop()
-                                loop.create_task(self.send_datagram(msg, addr))
+                                loop.create_task(self.send_datagram(msg, p.peer.addr))
                                 break
 
         elif data[0] == PPProtocl.MODEL_REQUEST_FLAG:
