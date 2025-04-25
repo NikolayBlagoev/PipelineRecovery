@@ -49,7 +49,7 @@ if __name__ == '__main__':
             ret = DELAY_BANDWIDTHS.get(p2+"-"+p1)
         else:
             ret = (10,0.500)
-
+        return (10,1.000)
         return (ret[0] - 0.1,ret[1])
     loc = locations[int(curr_id) % len(locations)]
     world = 21
