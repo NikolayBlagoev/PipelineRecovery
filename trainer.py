@@ -87,11 +87,11 @@ if __name__ == '__main__':
         queue_in = Queue(1024)
         queue_out = Queue(1024)
         device = "cuda"
-        if curr_id > 5:
+        if meshid > 5:
             device = "cuda:1"
-        if curr_id > 10:
+        if meshid > 10:
             device = "cuda:2"
-        if curr_id > 15:
+        if meshid > 15:
             device = "cuda:3"
         # if curr_id > 9:
         #     device = "cuda:4"
