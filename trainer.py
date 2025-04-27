@@ -104,7 +104,7 @@ if __name__ == '__main__':
         cb = loop.create_future()
         subprocess = Process(target=run_p,args=(queue_out,queue_in,curr_id,own_stage,seq_l,n_layers,batch_size,dmodel,num_heads,send_mbs, device)) 
         trainingp = PPProtocl(stage=own_stage, meshid=meshid, 
-                    MAX_STAGE=len(partitions), MAX_SEND = 6, 
+                    MAX_STAGE=len(partitions), MAX_SEND = send_mbs, 
                     stage_size = len(partitions[0]), has_weights=has_weights,
                     queue_in=queue_in, queue_out=queue_out, subprocess=subprocess,
                     crash_callback=cb, fail_at=fail_at, strategy=setting)
