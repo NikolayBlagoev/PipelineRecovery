@@ -11,7 +11,7 @@ from traceback import print_exception, format_exc
 from .llm_subp import *
 from time import sleep, time
 from deccom.cryptofuncs.hash import SHA256
-#TODO: Better wait on receive until aggregating
+#TODO: FIX!!!  THAT NODES CAN FAIL AFTER RECEIVING!! IN SUCH CASES RESEND!
 @dataclass
 class LocalPeer:
     peer: Peer
@@ -46,6 +46,8 @@ class PPProtocl(AbstractProtocol):
         self.connected_callback = lambda *args : ...
         self.crash_callback = crash_callback
         self.strategy = strategy
+        self.send_caches = {}
+        
         print(self.strategy)
         self.memory = 3
         self.MAX_MEMORY = 3
@@ -155,8 +157,11 @@ class PPProtocl(AbstractProtocol):
                     msg += int(self.peer.pub_key).to_bytes(4,byteorder="big")
                     msg += task.originator.to_bytes(4,byteorder="big")
                     msg += task.data
+                    
                     sndto = str(task.to)
-                   
+                    if sndto not in self.send_caches:
+                        self.send_caches[sndto] = []
+                    self.send_caches[sndto].append(msg)
                     p = await self._lower_find_peer(SHA256(sndto))
                     loop = asyncio.get_event_loop()
                     loop.create_task(self.send_stream(p.id_node,msg))
@@ -240,7 +245,7 @@ class PPProtocl(AbstractProtocol):
 
 
                 elif isinstance(task, Aggregate):
-                    
+                    self.send_caches.clear()
                     self.iteration += 1
                     if self.iteration == self.fail_at:
                         with open(f"log_stats_proj_2_{self.peer.pub_key}.txt", "a") as log:
@@ -347,7 +352,13 @@ class PPProtocl(AbstractProtocol):
                 log.write(f"INTRODUCTION FROM {meshid} {stage} {data[37]} {len(data)} {self._lower_get_peer(nodeid)} {nodeid}\n")
             has_weights = data[37] == 1
             self.peers[meshid] = LocalPeer(self._lower_get_peer(nodeid),stage,meshid,has_weights,nodeid)
-            
+            if meshid == self.meshid + self.stage_size and has_weights:
+                for k,v in self.send_caches:
+                    for msg in v:
+                        loop = asyncio.get_event_loop()
+                        loop.create_task(self.send_stream(nodeid,msg))
+
+
             # Weight recovery
             if self.strategy == "ours":
                 if not self.has_weights and not self.requested and has_weights and stage == self.stage:
