@@ -38,7 +38,7 @@ if __name__ == '__main__':
     locations = get_locations()
     send_mbs = 6
     if setting == "redundant":
-        batch_size = batch_size / 2
+        batch_size = batch_size // 2
         send_mbs = send_mbs * 2
     def delay_map(currid,otherid):
         p1 = locations[int(currid) % len(locations)]
