@@ -127,7 +127,7 @@ class PPProtocl(AbstractProtocol):
         self.queue_out.put(SendGradients(0,None), True)
         msg = bytearray()
         msg += PPProtocl.AGGREGATE_FLAG.to_bytes(1,byteorder="big")
-
+        self.pre_aggregation = True
         
         for p in self.peers.values():
             pub_key = str(p.peer.pub_key)
@@ -136,6 +136,10 @@ class PPProtocl(AbstractProtocol):
             p = await self._lower_find_peer(SHA256(pub_key))
                                 
             await self.send_datagram(msg, p.addr)
+        if self.received_gradients >= self.stage_size - 1 and self.pre_aggregation:
+            self.received_gradients = 0
+            self.put_on_queue(Aggregate(0),bypass=True)
+
             
 
     async def read_from_queue(self):
@@ -341,6 +345,9 @@ class PPProtocl(AbstractProtocol):
                 self.pre_aggregation = True
                 self.memory = self.MAX_MEMORY
                 self.put_on_queue(SendGradients(0, None),bypass=True)
+                if self.received_gradients >= self.stage_size - 1 and self.pre_aggregation:
+                    self.received_gradients = 0
+                    self.put_on_queue(Aggregate(0),bypass=True)
         elif data[0] == PPProtocl.FORGET_ME:
             self._lower_remove_peer(addr,data[1:])
         elif data[0] == PPProtocl.INTRODUCTION:
@@ -549,10 +556,9 @@ class PPProtocl(AbstractProtocol):
             self.received_gradients += 1
             with open(f"log_stats_proj_2_{self.peer.pub_key}.txt", "a") as log:
                 log.write(f"Gradient received from {nodeid}\n")
-            with open(f"log_stats_proj_2_{self.peer.pub_key}.txt", "a") as log:
-                log.write(f"Gradient received from {self._lower_get_peer(nodeid).pub_key}\n")
+
             self.put_on_queue(Gradients(0,data[1:]),bypass=True)
-            if self.received_gradients >= self.stage_size - 1:
+            if self.received_gradients >= self.stage_size - 1 and self.pre_aggregation:
                 self.received_gradients = 0
                 self.put_on_queue(Aggregate(0),bypass=True)
             
