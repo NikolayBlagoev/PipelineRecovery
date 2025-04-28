@@ -352,7 +352,7 @@ class PPProtocl(AbstractProtocol):
                 log.write(f"INTRODUCTION FROM {meshid} {stage} {data[37]} {len(data)} {self._lower_get_peer(nodeid)} {nodeid}\n")
             has_weights = data[37] == 1
             self.peers[meshid] = LocalPeer(self._lower_get_peer(nodeid),stage,meshid,has_weights,nodeid)
-            if meshid == self.meshid + self.stage_size and has_weights:
+            if meshid == self.meshid + self.stage_size:
                 for k,v in self.send_caches:
                     for msg in v:
                         loop = asyncio.get_event_loop()

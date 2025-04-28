@@ -53,7 +53,8 @@ def plot_fl(fl,label, validation = False, pad = [], flag = False, max_el = -1, s
                 
                 
                 validation_loss.append(float(ln.strip().split(" ")[3].strip()))
-                
+                if label != "Baseline" and validation_loss[-1] < 2.9:
+                    break
                 continue
             # print(ln)
             if "VALIDATION" in ln or "NORMAL" in ln:
@@ -78,12 +79,12 @@ def plot_fl(fl,label, validation = False, pad = [], flag = False, max_el = -1, s
     if validation:
         ret = validation_loss
     
-    print(len(actual_run))
+    print(label,len(actual_run))
     if flag:
         if validation:
             tmp = []
-            for i in range(0,max_el):
-                print(i)
+            for i in range(0,len(actual_run)//500):
+                # print(i)
                 i = actual_run[i*500] / 500
                 fl = math.floor(i)
                 cl = math.ceil(i)
@@ -101,20 +102,23 @@ def plot_fl(fl,label, validation = False, pad = [], flag = False, max_el = -1, s
     plt.plot(ret,label=label)
     
     if validation:
-        plt.xticks(list(range(len(ret))),list(map(lambda el: el*500, list(range(len(ret))))))
+        # plt.xticks(list(range(len(ret))),list(map(lambda el: el*500, list(range(len(ret))))))
         if show_failures:
             plt.vlines(list(map(lambda el: el/500,failures)),ymin=0,ymax=10,color=(1,0,0,0.1))
     else:
         if show_failures:
             plt.vlines(failures,ymin=0,ymax=10,color=(1,0,0,0.1))
 
-MAX_EL = 30000
+MAX_EL = 100000
 validate = True
 show_failures = False
 smooth = 1
 plot_fl("results/medium_naive_16/out0.txt", "Naive copy",max_el=MAX_EL,validation=validate, show_failures=show_failures, smooth = smooth)
 plot_fl("results/medium_baseline_16/out0.txt", "Baseline",flag=True,max_el=MAX_EL,validation=validate, show_failures=show_failures, smooth = smooth)
 plot_fl("results/medium_gradavg_16/out0.txt", "Ours",max_el=MAX_EL,validation=validate, show_failures=show_failures, smooth = smooth)
+plot_fl("results/medium_gradavg_10/out0.txt", "Ours 10",max_el=MAX_EL,validation=validate, show_failures=show_failures, smooth = smooth)
+plot_fl("results/medium_gradavg_33/out0.txt", "Ours 33",max_el=MAX_EL,validation=validate, show_failures=show_failures, smooth = smooth)
+plot_fl("results/medium_baseline_16/out0.txt", "No Failure",max_el=MAX_EL,validation=validate, show_failures=show_failures, smooth = smooth)
 # plot_fl("results/to_send_small_no_fault/out0.txt", "Baseline")
 # plot_fl("results/to_send_grad_avg_16_small/out0.txt", "ours", pad=[10.04,10.04,10.04,10.04,10.04,10.04])
 
