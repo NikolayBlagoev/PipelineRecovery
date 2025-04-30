@@ -1,13 +1,17 @@
 import matplotlib.pyplot as plt
 import math
 import numpy as np
-plt.figure(figsize=(16,10))
+import matplotlib.transforms as transforms
+plt.figure(figsize=(12,8))
+plt.rcParams.update({'font.size': 14})
 plt.locator_params(axis='x', nbins=10)
+maximum_size = 0
 def smooth_func(y, box_pts):
     box = np.ones(box_pts)/box_pts
     y_smooth = np.convolve(y, box, mode='same')
     return y_smooth
-def plot_fl(fl,label, validation = False, pad = [], flag = False, max_el = -1, show_failures = False, smooth = 1):
+def plot_fl(fl,label, validation = False, pad = [], flag = False, max_el = -1, show_failures = False, smooth = 1, val_loss = 2.9):
+    global maximum_size
     start = False
     validation_loss = [] + pad
     training_loss = []
@@ -36,7 +40,7 @@ def plot_fl(fl,label, validation = False, pad = [], flag = False, max_el = -1, s
                 # print(node)
                 # if node != 0 and node != 5:
                 #     continue
-                if to_add > max_el:
+                if to_add > max_el and max_el != -1:
                     break
                 failures.append(to_add)
                 
@@ -53,7 +57,8 @@ def plot_fl(fl,label, validation = False, pad = [], flag = False, max_el = -1, s
                 
                 
                 validation_loss.append(float(ln.strip().split(" ")[3].strip()))
-                if label != "Baseline" and validation_loss[-1] < 2.9:
+                if not flag and validation_loss[-1] < val_loss and max_el == -1:
+                    print("BREAK")
                     break
                 continue
             # print(ln)
@@ -73,13 +78,15 @@ def plot_fl(fl,label, validation = False, pad = [], flag = False, max_el = -1, s
             except IndexError:
                 continue
     # print(arr1)
-    if validation:
+    adjust = False
+    if validation and max_el != -1:
+        adjust = True
         max_el = max_el // 500
     ret = training_loss
     if validation:
         ret = validation_loss
     
-    print(label,len(actual_run))
+    
     if flag:
         if validation:
             tmp = []
@@ -90,6 +97,8 @@ def plot_fl(fl,label, validation = False, pad = [], flag = False, max_el = -1, s
                 cl = math.ceil(i)
                 alpha = i - fl
                 tmp.append((1-alpha)*validation_loss[fl] + alpha * validation_loss[cl])
+                if tmp[-1] < val_loss:
+                    break
             
         else:
             tmp = []
@@ -97,31 +106,45 @@ def plot_fl(fl,label, validation = False, pad = [], flag = False, max_el = -1, s
                 tmp.append(training_loss[actual_run[i]])
 
         ret = tmp
-    ret = ret[:max_el]
+    print(label,len(ret))
+    if (max_el != -1 and not adjust) or adjust:
+        
+        ret = ret[:max_el]
     ret = smooth_func(ret,smooth)
+    maximum_size = max(maximum_size,len(ret))
     plt.plot(ret,label=label)
     
     if validation:
-        # plt.xticks(list(range(len(ret))),list(map(lambda el: el*500, list(range(len(ret))))))
+        # 
         if show_failures:
             plt.vlines(list(map(lambda el: el/500,failures)),ymin=0,ymax=10,color=(1,0,0,0.1))
     else:
         if show_failures:
             plt.vlines(failures,ymin=0,ymax=10,color=(1,0,0,0.1))
 
-MAX_EL = 100000
+MAX_EL = 40000
 validate = True
 show_failures = False
 smooth = 1
-plot_fl("results/medium_naive_16/out0.txt", "Naive copy",max_el=MAX_EL,validation=validate, show_failures=show_failures, smooth = smooth)
-plot_fl("results/medium_baseline_16/out0.txt", "Baseline",flag=True,max_el=MAX_EL,validation=validate, show_failures=show_failures, smooth = smooth)
-plot_fl("results/medium_gradavg_16/out0.txt", "Ours",max_el=MAX_EL,validation=validate, show_failures=show_failures, smooth = smooth)
-plot_fl("results/medium_gradavg_10/out0.txt", "Ours 10",max_el=MAX_EL,validation=validate, show_failures=show_failures, smooth = smooth)
-plot_fl("results/medium_gradavg_33/out0.txt", "Ours 33",max_el=MAX_EL,validation=validate, show_failures=show_failures, smooth = smooth)
-plot_fl("results/medium_baseline_16/out0.txt", "No Failure",max_el=MAX_EL,validation=validate, show_failures=show_failures, smooth = smooth)
+plot_fl("results/medium_naive_16/out0.txt", "Naive copy 16%",max_el=MAX_EL,validation=validate, show_failures=show_failures, smooth = smooth)
+plot_fl("results/medium_baseline_16/out0.txt", "Checkpointing 16%",flag=True,validation=validate, show_failures=show_failures, smooth = smooth)
+plot_fl("results/medium_gradavg_33/out0.txt", "Ours 33%",validation=validate, show_failures=show_failures, smooth = smooth)
+plot_fl("results/medium_gradavg_16/out0.txt", "Ours 16%",validation=validate, show_failures=show_failures, smooth = smooth)
+plot_fl("results/medium_gradavg_10/out0.txt", "Ours 10%",validation=validate, show_failures=show_failures, smooth = smooth)
+plot_fl("results/medium_baseline_16/out0.txt", "No Faults",validation=validate, show_failures=show_failures, smooth = smooth)
 # plot_fl("results/to_send_small_no_fault/out0.txt", "Baseline")
 # plot_fl("results/to_send_grad_avg_16_small/out0.txt", "ours", pad=[10.04,10.04,10.04,10.04,10.04,10.04])
+# plot_fl("results/small_baseline_16/out0.txt", "Checkpointing",flag=True,validation=validate, show_failures=show_failures, smooth = smooth, val_loss=1.3)
+# plot_fl("results/small_gradavg_16/out0.txt", "Ours",validation=validate, show_failures=show_failures, smooth = smooth, val_loss=1.3)
+# plot_fl("results/small_baseline_16/out0.txt", "Redundant",validation=validate, show_failures=show_failures, smooth = smooth, val_loss=1.3)
+if validate:
+    nbins = min(maximum_size,10)
+    print(maximum_size)
+    bottom = list(range(0,maximum_size + maximum_size//nbins,maximum_size//nbins))
+    remap = map(lambda el: el*500, bottom)
+    plt.xticks(bottom,remap)
 
 plt.legend()
-plt.savefig("medium_validation_results_recovery.pdf")
+# plt.savefig("small_results.pdf")
+plt.savefig("tmp.pdf")
 plt.show()

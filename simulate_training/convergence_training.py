@@ -229,7 +229,12 @@ for itr in range(max_iterations):
                             selector = i - 1
                         s.load_state_dict(deepcopy(stages[selector].state_dict()))
                         optimizers[i] = make_optim(s.parameters(),lr = lr_scale*init_lr)
+                    elif checkpoint_mode == "ours-random":
                         
+                        stages[i] = LLamaStage(dmodel=dmodel,num_heads=num_heads,
+                                device=device, n_layers=n_layers_per_stage, ctx_size=seq_l,padding_idx=tokenizer.pad_id)
+                        s = stages[i]
+                        optimizers[i] = make_optim(s.parameters(),lr = lr_scale*init_lr)
                             
                     elif checkpoint_mode == "ours-grad-avg":
                         if i == len(stages)-1:
