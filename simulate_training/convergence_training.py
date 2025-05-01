@@ -93,11 +93,20 @@ elif config["architecture"] == "GPT":
     for _ in range(n_stages):
         stages.append(GPTStage(dmodel=dmodel,num_heads=num_heads,
                     device=device, n_layers=n_layers_per_stage, ctx_size=seq_l))
+
 # print(len(stages))
 if start_iter > 0:
     for i,s in enumerate(stages):
         s.load_state_dict(torch.load(f"mdl_{i}.pth",map_location=device))
 
+optimizers = []
+optimizer_checkpoints = []
+for i in range(len(stages)):
+    optimizers.append(make_optim(stages[i].parameters(),lr=init_lr))
+
+if start_iter > 0:
+    for i in range(len(stages)):
+        optimizers[i].load_state_dict(torch.load(f"optim_{i}.pth"))
 means = [0 for _ in range(len(stages))]
 stds = [1 for _ in range(len(stages))]
 prev_gradient_norm = [1 for _ in range(len(stages))]
@@ -117,10 +126,7 @@ elif config["dataset"] == "TinyStories":
 # we can iterate the dataset with:
 iter_ds = iter(ds)
 
-optimizers = []
-optimizer_checkpoints = []
-for i in range(len(stages)):
-    optimizers.append(make_optim(stages[i].parameters(),lr=init_lr))
+
 
 checkpoints = []
 

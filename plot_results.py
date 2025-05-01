@@ -2,8 +2,9 @@ import matplotlib.pyplot as plt
 import math
 import numpy as np
 import matplotlib.transforms as transforms
+from checkpoint_simulation import simulate_failures
 plt.figure(figsize=(12,8))
-plt.rcParams.update({'font.size': 14})
+plt.rcParams.update({'font.size': 18})
 plt.locator_params(axis='x', nbins=10)
 maximum_size = 0
 def smooth_func(y, box_pts):
@@ -126,25 +127,33 @@ MAX_EL = 40000
 validate = True
 show_failures = False
 smooth = 1
-plot_fl("results/medium_naive_16/out0.txt", "Naive copy 16%",max_el=MAX_EL,validation=validate, show_failures=show_failures, smooth = smooth)
-plot_fl("results/medium_baseline_16/out0.txt", "Checkpointing 16%",flag=True,validation=validate, show_failures=show_failures, smooth = smooth)
-plot_fl("results/medium_gradavg_33/out0.txt", "Ours 33%",validation=validate, show_failures=show_failures, smooth = smooth)
-plot_fl("results/medium_gradavg_16/out0.txt", "Ours 16%",validation=validate, show_failures=show_failures, smooth = smooth)
-plot_fl("results/medium_gradavg_10/out0.txt", "Ours 10%",validation=validate, show_failures=show_failures, smooth = smooth)
-plot_fl("results/medium_baseline_16/out0.txt", "No Faults",validation=validate, show_failures=show_failures, smooth = smooth)
+val_loss = 1.3
+tmp = 0
+tmp = simulate_failures("results/small_gradavg_16/out0.txt","results/small_baseline_16/out0.txt",val_loss=val_loss,checkpoint_freq=50, label="Checkpointing 16%")
+# plot_fl("results/medium_naive_16/out0.txt", "Naive copy 16%",max_el=MAX_EL,validation=validate, show_failures=show_failures, smooth = smooth)
+# plot_fl("results/medium_baseline_16/out0.txt", "Checkpointing 16%",flag=True,validation=validate, show_failures=show_failures, smooth = smooth)
+# plot_fl("results/medium_gradavg_33/out0.txt", "Ours 33%",validation=validate, show_failures=show_failures, smooth = smooth)
+plot_fl("results/small_gradavg_16/out0.txt", "Ours 16%",validation=validate, show_failures=show_failures, smooth = smooth, val_loss=val_loss)
+# plot_fl("results/medium_gradavg_10/out0.txt", "Ours 10%",validation=validate, show_failures=show_failures, smooth = smooth)
+plot_fl("results/small_baseline_16/out0.txt", "Redundant 16%",validation=validate, show_failures=show_failures, smooth = smooth, val_loss=val_loss)
 # plot_fl("results/to_send_small_no_fault/out0.txt", "Baseline")
 # plot_fl("results/to_send_grad_avg_16_small/out0.txt", "ours", pad=[10.04,10.04,10.04,10.04,10.04,10.04])
 # plot_fl("results/small_baseline_16/out0.txt", "Checkpointing",flag=True,validation=validate, show_failures=show_failures, smooth = smooth, val_loss=1.3)
 # plot_fl("results/small_gradavg_16/out0.txt", "Ours",validation=validate, show_failures=show_failures, smooth = smooth, val_loss=1.3)
 # plot_fl("results/small_baseline_16/out0.txt", "Redundant",validation=validate, show_failures=show_failures, smooth = smooth, val_loss=1.3)
+
+maximum_size = max(maximum_size,tmp)
 if validate:
     nbins = min(maximum_size,10)
     print(maximum_size)
     bottom = list(range(0,maximum_size + maximum_size//nbins,maximum_size//nbins))
     remap = map(lambda el: el*500, bottom)
     plt.xticks(bottom,remap)
-
+title = "Small 16% recovery"
 plt.legend()
+plt.title(title)
+plt.ylabel("Validation Loss")
+plt.xlabel("Iteration")
 # plt.savefig("small_results.pdf")
-plt.savefig("tmp.pdf")
+plt.savefig(f"{title.replace(" ","_").replace("%","")}.pdf")
 plt.show()
