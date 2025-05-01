@@ -106,7 +106,7 @@ for i in range(len(stages)):
 
 if start_iter > 0:
     for i in range(len(stages)):
-        optimizers[i].load_state_dict(torch.load(f"optim_{i}.pth"))
+        optimizers[i].load_state_dict(torch.load(f"optim_{i}.pth",map_location=device))
 means = [0 for _ in range(len(stages))]
 stds = [1 for _ in range(len(stages))]
 prev_gradient_norm = [1 for _ in range(len(stages))]
