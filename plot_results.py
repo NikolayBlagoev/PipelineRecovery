@@ -4,8 +4,8 @@ import numpy as np
 import matplotlib.transforms as transforms
 from checkpoint_simulation import simulate_failures
 plt.figure(figsize=(12,8))
-plt.rcParams.update({'font.size': 18})
-plt.locator_params(axis='x', nbins=10)
+plt.rcParams.update({'font.size': 24})
+plt.locator_params(axis='x', nbins=5)
 maximum_size = 0
 def smooth_func(y, box_pts):
     box = np.ones(box_pts)/box_pts
@@ -113,7 +113,7 @@ def plot_fl(fl,label, validation = False, pad = [], flag = False, max_el = -1, s
         ret = ret[:max_el]
     ret = smooth_func(ret,smooth)
     maximum_size = max(maximum_size,len(ret))
-    plt.plot(ret,label=label)
+    plt.plot(ret,label=label,linewidth=3.0)
     
     if validation:
         # 
@@ -129,22 +129,27 @@ show_failures = False
 smooth = 1
 val_loss = 1.3
 tmp = 0
-tmp = simulate_failures("results/small_gradavg_16/out0.txt","results/small_baseline_16/out0.txt",val_loss=val_loss,checkpoint_freq=50, label="Checkpointing 16%")
+tmp = simulate_failures("results/small_gradavg_16/out0.txt","results/small_baseline_16/out0.txt",val_loss=val_loss,checkpoint_freq=50, label="Checkpointing")
+# tmp = max(tmp,simulate_failures("results/medium_gradavg_16/out0.txt","results/medium_baseline_16/out0.txt",val_loss=val_loss,checkpoint_freq=50, label="Checkpointing 50"))
+# tmp = max(tmp,simulate_failures("results/medium_gradavg_16/out0.txt","results/medium_baseline_16/out0.txt",val_loss=val_loss,checkpoint_freq=25, label="Checkpointing 25"))
 # plot_fl("results/medium_naive_16/out0.txt", "Naive copy 16%",max_el=MAX_EL,validation=validate, show_failures=show_failures, smooth = smooth)
 # plot_fl("results/medium_baseline_16/out0.txt", "Checkpointing 16%",flag=True,validation=validate, show_failures=show_failures, smooth = smooth)
 # plot_fl("results/medium_gradavg_33/out0.txt", "Ours 33%",validation=validate, show_failures=show_failures, smooth = smooth)
-plot_fl("results/small_gradavg_16/out0.txt", "Ours 16%",validation=validate, show_failures=show_failures, smooth = smooth, val_loss=val_loss)
-# plot_fl("results/medium_gradavg_10/out0.txt", "Ours 10%",validation=validate, show_failures=show_failures, smooth = smooth)
-plot_fl("results/small_baseline_16/out0.txt", "Redundant 16%",validation=validate, show_failures=show_failures, smooth = smooth, val_loss=val_loss)
+# plot_fl("results/small_gradavg_16/out0.txt", "Ours 16%",validation=validate, show_failures=show_failures, smooth = smooth, val_loss=val_loss)
+# plot_fl("results/medium_gradavg_33/out0.txt", "Ours 33%",validation=validate, show_failures=show_failures, smooth = smooth, val_loss=val_loss)
+# plot_fl("results/medium_gradavg_16/out0.txt", "Ours",validation=validate, show_failures=show_failures, smooth = smooth, val_loss=val_loss)
+# plot_fl("results/medium_gradavg_10/out0.txt", "Ours 10%",validation=validate, show_failures=show_failures, smooth = smooth, val_loss=val_loss)
+# plot_fl("results/medium_baseline_16/out0.txt", "No fault",validation=validate, show_failures=show_failures, smooth = smooth, val_loss=val_loss)
+# plot_fl("results/small_baseline_16/out0.txt", "Redundant 16%",validation=validate, show_failures=show_failures, smooth = smooth, val_loss=val_loss)
 # plot_fl("results/to_send_small_no_fault/out0.txt", "Baseline")
 # plot_fl("results/to_send_grad_avg_16_small/out0.txt", "ours", pad=[10.04,10.04,10.04,10.04,10.04,10.04])
 # plot_fl("results/small_baseline_16/out0.txt", "Checkpointing",flag=True,validation=validate, show_failures=show_failures, smooth = smooth, val_loss=1.3)
-# plot_fl("results/small_gradavg_16/out0.txt", "Ours",validation=validate, show_failures=show_failures, smooth = smooth, val_loss=1.3)
-# plot_fl("results/small_baseline_16/out0.txt", "Redundant",validation=validate, show_failures=show_failures, smooth = smooth, val_loss=1.3)
+plot_fl("results/small_gradavg_16/out0.txt", "Ours",validation=validate, show_failures=show_failures, smooth = smooth, val_loss=1.3)
+plot_fl("results/small_baseline_16/out0.txt", "Redundant",validation=validate, show_failures=show_failures, smooth = smooth, val_loss=1.3)
 
 maximum_size = max(maximum_size,tmp)
 if validate:
-    nbins = min(maximum_size,10)
+    nbins = min(maximum_size,5)
     print(maximum_size)
     bottom = list(range(0,maximum_size + maximum_size//nbins,maximum_size//nbins))
     remap = map(lambda el: el*500, bottom)

@@ -30,7 +30,17 @@ dist.init_process_group("gloo", rank=rank, world_size=world_size)
 start_iter = int(argv[7]) if len(argv) > 7 else 0
 with open(argv[6],"r") as fd:
     config = json.load(fd)
-
+gamma = 0.0001
+def custom_loss(net1,net2,net3):
+    l = 0
+    if net3 == None:
+        for p1,p2 in zip(net1.parameters(), net2.parameters()):
+            l += (p1 - p2).abs().sum()
+    else:
+        for p1,p2,p3 in zip(net1.parameters(), net2.parameters(), net3.parameters()):
+            l += (p1 - p2*0.5 - p3*0.5).abs().sum()
+    return l
+            
 dmodel = config["dmodel"]
 num_heads = config["num_heads"]
 n_layers_per_stage = config["n_layers_per_stage"]
@@ -296,6 +306,13 @@ for itr in range(max_iterations):
             x = stages[0].forward_end(x)
             
             loss = causalLLMLoss(x,target,tokenizer.vocab_size)
+            for i_s in range(1,len(stages)):
+                if i_s == 0:
+                    loss += gamma*custom_loss(stages[i_s], stages[i_s+1]) / len(stages)
+                elif i_s == len(stages) - 1:
+                    loss += gamma*custom_loss(stages[i_s], stages[i_s-1]) / len(stages)
+                else:
+                    loss += gamma*custom_loss(stages[i_s], stages[i_s-1], stages[i_s+1]) / len(stages)
             loss = loss / mb_count
             
             this_round_loss += loss.item()
