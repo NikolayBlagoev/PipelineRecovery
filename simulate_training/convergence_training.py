@@ -315,7 +315,7 @@ for itr in range(max_iterations):
         print(itr,this_round_loss)
         loss = 0
         for i_s in range(1,len(stages)):
-            if i_s == 0:
+            if i_s == 1:
                 loss += gamma*custom_loss(stages[i_s], stages[i_s+1]) / len(stages)
             elif i_s == len(stages) - 1:
                 loss += gamma*custom_loss(stages[i_s], stages[i_s-1]) / len(stages)
