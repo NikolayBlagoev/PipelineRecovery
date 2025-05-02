@@ -316,9 +316,9 @@ for itr in range(max_iterations):
         loss = 0
         for i_s in range(1,len(stages)):
             if i_s == 1:
-                loss += gamma*custom_loss(stages[i_s], stages[i_s+1]) / len(stages)
+                loss += gamma*custom_loss(stages[i_s], stages[i_s+1],None) / len(stages)
             elif i_s == len(stages) - 1:
-                loss += gamma*custom_loss(stages[i_s], stages[i_s-1]) / len(stages)
+                loss += gamma*custom_loss(stages[i_s], stages[i_s-1],None) / len(stages)
             else:
                 loss += gamma*custom_loss(stages[i_s], stages[i_s-1], stages[i_s+1]) / len(stages)
         loss.backward()
