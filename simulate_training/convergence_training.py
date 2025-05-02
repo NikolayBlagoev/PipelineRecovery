@@ -30,7 +30,7 @@ dist.init_process_group("gloo", rank=rank, world_size=world_size)
 start_iter = int(argv[7]) if len(argv) > 7 else 0
 with open(argv[6],"r") as fd:
     config = json.load(fd)
-gamma = 0.0001
+gamma = 0
 def custom_loss(net1,net2,net3):
     l = 0
     if net3 == None:
@@ -313,15 +313,16 @@ for itr in range(max_iterations):
             
             loss.backward()
         print(itr,this_round_loss)
-        loss = 0
-        for i_s in range(1,len(stages)):
-            if i_s == 1:
-                loss += gamma*custom_loss(stages[i_s], stages[i_s+1],None) / len(stages)
-            elif i_s == len(stages) - 1:
-                loss += gamma*custom_loss(stages[i_s], stages[i_s-1],None) / len(stages)
-            else:
-                loss += gamma*custom_loss(stages[i_s], stages[i_s-1], stages[i_s+1]) / len(stages)
-        loss.backward()
+        if gamma > 0:
+            loss = 0
+            for i_s in range(1,len(stages)):
+                if i_s == 1:
+                    loss += gamma*custom_loss(stages[i_s], stages[i_s+1],None) / len(stages)
+                elif i_s == len(stages) - 1:
+                    loss += gamma*custom_loss(stages[i_s], stages[i_s-1],None) / len(stages)
+                else:
+                    loss += gamma*custom_loss(stages[i_s], stages[i_s-1], stages[i_s+1]) / len(stages)
+            loss.backward()
         dist.barrier() # wait for everyone
 
         # Sync weights
