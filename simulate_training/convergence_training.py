@@ -30,15 +30,20 @@ dist.init_process_group("gloo", rank=rank, world_size=world_size)
 start_iter = int(argv[7]) if len(argv) > 7 else 0
 with open(argv[6],"r") as fd:
     config = json.load(fd)
-gamma = 0.001
+gamma = 1e-4
 def custom_loss(net1,net2,net3):
     l = 0
+    count = 0
     if net3 == None:
         for p1,p2 in zip(net1.parameters(), net2.parameters()):
-            l += (p1 - p2).abs().sum()
+            count += 1
+            l += 0.5*(p1 - p2).abs().sum()
     else:
+
         for p1,p2,p3 in zip(net1.parameters(), net2.parameters(), net3.parameters()):
+            count += 1
             l += (p1 - p2*0.5 - p3*0.5).abs().sum()
+    l = l / count
     return l
             
 dmodel = config["dmodel"]
