@@ -30,7 +30,7 @@ dist.init_process_group("gloo", rank=rank, world_size=world_size)
 start_iter = int(argv[7]) if len(argv) > 7 else 0
 with open(argv[6],"r") as fd:
     config = json.load(fd)
-gamma = 1e-4
+gamma = 0
 def custom_loss(net1,net2,net3):
     l = 0
     count = 0
