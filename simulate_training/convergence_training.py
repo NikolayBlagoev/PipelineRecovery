@@ -82,7 +82,7 @@ def lr_lambda(current_step: int) -> float:
     
 # make the tokenizer
 def make_optim(params,lr):
-    return AdamW(params, lr, betas=(0.9, 0.97), weight_decay=1e-3)
+    return AdamW(params, lr, betas=(0.9, 0.97), weight_decay=0)
 
 world_data_size = world_size
 rank_data_size = rank
@@ -97,7 +97,7 @@ if config["architecture"] == "LLaMa":
     # Make the stages:
     
     for _ in range(n_stages):
-        torch.manual_seed(34107)
+        # torch.manual_seed(34107)
         stages.append(LLamaStage(dmodel=dmodel,num_heads=num_heads,
                     device=device, n_layers=n_layers_per_stage, ctx_size=seq_l,padding_idx=tokenizer.pad_id))
 elif config["architecture"] == "GPT":
