@@ -12,5 +12,6 @@
 
 ./run.sh ours-grad-avg 4 10 500M_config.json 0
 ./run.sh ours-grad-avg 4 16 500M_config.json 0
+./run.sh ours-grad-avg 4 33 500M_config.json 0
 524296192
 536936448
