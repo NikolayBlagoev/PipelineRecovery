@@ -102,6 +102,7 @@ if config["architecture"] == "LLaMa":
                     device=device, n_layers=n_layers_per_stage, ctx_size=seq_l,padding_idx=tokenizer.pad_id))
 elif config["architecture"] == "GPT":
     tokenizer = GPTTokenizer()
+    torch.manual_seed(34107)
     s0 = GPTFirstStage(tokenizer.vocab_size, dmodel=dmodel, num_heads=num_heads, device=device,
                             n_layers=0, ctx_size=seq_l, padding_idx=tokenizer.pad_id, de_embed=True)
     stages = [s0]
