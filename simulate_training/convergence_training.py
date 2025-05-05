@@ -88,6 +88,7 @@ world_data_size = world_size
 rank_data_size = rank
 if config["architecture"] == "LLaMa":
     tokenizer = SPTokenizer()
+    torch.manual_seed(34107)
     s0 = LLamaFirstStage(tokenizer.vocab_size,dmodel=dmodel,num_heads=num_heads,
                     device=device, n_layers=0, ctx_size=seq_l,padding_idx=tokenizer.pad_id,de_embed=True)
     
@@ -96,6 +97,7 @@ if config["architecture"] == "LLaMa":
     # Make the stages:
     
     for _ in range(n_stages):
+        torch.manual_seed(34107)
         stages.append(LLamaStage(dmodel=dmodel,num_heads=num_heads,
                     device=device, n_layers=n_layers_per_stage, ctx_size=seq_l,padding_idx=tokenizer.pad_id))
 elif config["architecture"] == "GPT":
