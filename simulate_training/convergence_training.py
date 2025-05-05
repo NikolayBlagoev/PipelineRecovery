@@ -30,7 +30,7 @@ dist.init_process_group("gloo", rank=rank, world_size=world_size)
 start_iter = int(argv[7]) if len(argv) > 7 else 0
 with open(argv[6],"r") as fd:
     config = json.load(fd)
-gamma = 1e-3
+gamma = 0
 def custom_loss(net1,net2,net3):
     l = 0
     count = 0
@@ -82,7 +82,7 @@ def lr_lambda(current_step: int) -> float:
     
 # make the tokenizer
 def make_optim(params,lr):
-    return AdamW(params, lr, betas=(0.9, 0.97), weight_decay=0.0)
+    return AdamW(params, lr, betas=(0.9, 0.97), weight_decay=1e-3)
 
 world_data_size = world_size
 rank_data_size = rank
