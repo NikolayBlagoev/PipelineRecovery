@@ -46,6 +46,7 @@ def custom_loss(net1,net2,net3):
 
         for p1,p2,p3 in zip(net1.parameters(), net2.parameters(), net3.parameters()):
             count += 1
+            print(p1.shape,p2.shape,p3.shape)
             l += F.cosine_similarity(p1, 0.5*p2 + 0.5*p3)
     l = l / count
     return l
