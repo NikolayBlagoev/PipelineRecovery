@@ -34,7 +34,7 @@ checkpoint_mode = argv[1]
 gamma = 1e-5 if "regularize" in checkpoint_mode else 0
 init_lr = config["lr"]
 if "regularize" in checkpoint_mode:
-    checkpoint_mode = checkpoint_mode[:len("-regularize")]
+    checkpoint_mode = checkpoint_mode[:-len("-regularize")]
     print("NEW CHECKPOINT MODE", checkpoint_mode, checkpoint_mode == "ours-grad-avg")
 def custom_loss(net1,net2,net3,itr):
     l = 0
