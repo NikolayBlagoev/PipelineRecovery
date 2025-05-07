@@ -37,6 +37,7 @@ if "regularize" in checkpoint_mode:
     checkpoint_mode = checkpoint_mode[:-len("-regularize")]
     print("NEW CHECKPOINT MODE", checkpoint_mode, checkpoint_mode == "ours-grad-avg")
 def custom_loss(net1,net2,net3,itr):
+    return
     l = 0
     count = 0
     if net3 == None:
@@ -51,7 +52,6 @@ def custom_loss(net1,net2,net3,itr):
             p1.grad -=  max(0.25,math.exp(-itr/10_000))*gamma * (p1 - (0.5*p2 + 0.5*p3))
             # l += 1-F.cosine_similarity(p1.view(-1), (0.5*p2 + 0.5*p3).view(-1),dim=0)
     
-    return l
 
 
             
@@ -91,7 +91,7 @@ def lr_lambda(current_step: int) -> float:
     
 # make the tokenizer
 def make_optim(params,lr):
-    return AdamW(params, lr, betas=(0.9, 0.97), weight_decay=0)
+    return AdamW(params, lr, betas=(0.9, 0.97), weight_decay=gamma)
 
 world_data_size = world_size
 rank_data_size = rank
