@@ -30,7 +30,11 @@ dist.init_process_group("gloo", rank=rank, world_size=world_size)
 start_iter = int(argv[7]) if len(argv) > 7 else 0
 with open(argv[6],"r") as fd:
     config = json.load(fd)
-gamma = 1e-3
+checkpoint_mode = argv[1]
+gamma = 1e-3 if "regularize" in checkpoint_mode else 0
+
+if "regularize" in checkpoint_mode:
+    checkpoint_mode = checkpoint_mode[:len("-regularize")]
 def custom_loss(net1,net2,net3):
     l = 0
     count = 0
@@ -42,7 +46,7 @@ def custom_loss(net1,net2,net3):
 
         for p1,p2,p3 in zip(net1.parameters(), net2.parameters(), net3.parameters()):
             count += 1
-            l += (p1 - p2*0.5 - p3*0.5).abs().mean()
+            l += F.cosine_similarity(p1, 0.5*p2 + 0.5*p3)
     l = l / count
     return l
             
@@ -57,7 +61,7 @@ mb_count = config["mb_count"]
 validation_amount = config["validation"]
 max_iterations = config["max_iterations"] 
 init_lr = config["lr"]
-checkpoint_mode = argv[1]
+
 device = argv[2]
 num_warmup_steps = 2000
 num_training_steps = max_iterations
@@ -97,7 +101,7 @@ if config["architecture"] == "LLaMa":
     # Make the stages:
     
     for _ in range(n_stages):
-        # torch.manual_seed(34107)
+        torch.manual_seed(34107)
         stages.append(LLamaStage(dmodel=dmodel,num_heads=num_heads,
                     device=device, n_layers=n_layers_per_stage, ctx_size=seq_l,padding_idx=tokenizer.pad_id))
 elif config["architecture"] == "GPT":
@@ -325,8 +329,10 @@ for itr in range(max_iterations):
             loss = 0
             for i_s in range(1,len(stages)):
                 if i_s == 1:
+                    continue
                     loss += gamma*custom_loss(stages[i_s], stages[i_s+1],None) / len(stages)
                 elif i_s == len(stages) - 1:
+                    continue
                     loss += gamma*custom_loss(stages[i_s], stages[i_s-1],None) / len(stages)
                 else:
                     loss += gamma*custom_loss(stages[i_s], stages[i_s-1], stages[i_s+1]) / len(stages)
