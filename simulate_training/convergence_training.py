@@ -284,21 +284,27 @@ for itr in range(max_iterations):
                         if i == len(stages)-1:
                             
                             s.load_state_dict(deepcopy(stages[i-1].state_dict()))
-                            optimizers[i] = make_optim(s.parameters(),lr = lr_scale*init_lr)
+                            optimizers[i] = make_optim(s.parameters(),lr = init_lr)
                             optimizers[i].zero_grad()
                         elif i == 1: 
                             s.load_state_dict(deepcopy(stages[i+1].state_dict()))
-                            optimizers[i] = make_optim(s.parameters(),lr = lr_scale*init_lr)
+                            optimizers[i] = make_optim(s.parameters(),lr = init_lr)
                             optimizers[i].zero_grad()
                         else:
                             m1 = deepcopy(stages[i+1].state_dict())
                             m2 = deepcopy(stages[i-1].state_dict())
                             alpha = abs(prev_gradient_norm[i+1]) + 0.0001
                             beta = abs(prev_gradient_norm[i-1]) + 0.0001
-                            m3 = s.state_dict()
+                            alpha = min(alpha,1.0)
+                            beta = min(beta,1.0)
+                            stages[i] = LLamaStage(dmodel=dmodel,num_heads=num_heads,
+                                device=device, n_layers=n_layers_per_stage, ctx_size=seq_l,padding_idx=tokenizer.pad_id)
+                            
+                            m3 = stages[i].state_dict()
                             for key in m1:
                                 m3[key] = (alpha*m1[key] + beta*m2[key]) / (alpha + beta)
-                            s.load_state_dict(m3)
+                            stages[i].load_state_dict(m3)
+                            s = stages[i]
                             
                             optimizers[i] = make_optim(s.parameters(),lr = init_lr)
                             optimizers[i].zero_grad()
