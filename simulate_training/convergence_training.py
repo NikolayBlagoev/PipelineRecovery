@@ -91,7 +91,7 @@ def lr_lambda(current_step: int) -> float:
     
 # make the tokenizer
 def make_optim(params,lr):
-    return AdamW(params, lr, betas=(0.9, 0.97), weight_decay=gamma)
+    return AdamW(params, lr, betas=(0.9, 0.97), weight_decay=0)
 
 world_data_size = world_size
 rank_data_size = rank
@@ -285,11 +285,13 @@ for itr in range(max_iterations):
                             
                             s.load_state_dict(deepcopy(stages[i-1].state_dict()))
                             optimizers[i] = make_optim(s.parameters(),lr = init_lr)
-                            optimizers[i].zero_grad()
+                            for optim in optimizers:
+                                optim.zero_grad()
                         elif i == 1: 
                             s.load_state_dict(deepcopy(stages[i+1].state_dict()))
                             optimizers[i] = make_optim(s.parameters(),lr = init_lr)
-                            optimizers[i].zero_grad()
+                            for optim in optimizers:
+                                optim.zero_grad()
                         else:
                             m1 = deepcopy(stages[i+1].state_dict())
                             m2 = deepcopy(stages[i-1].state_dict())
@@ -306,7 +308,9 @@ for itr in range(max_iterations):
                             s = stages[i]
                             
                             optimizers[i] = make_optim(s.parameters(),lr = init_lr)
-                            optimizers[i].zero_grad()
+                            for optim in optimizers:
+                                optim.zero_grad()
+                            
                             del m3
                             del m2
                             del m1
