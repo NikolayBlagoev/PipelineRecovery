@@ -31,12 +31,12 @@ start_iter = int(argv[7]) if len(argv) > 7 else 0
 with open(argv[6],"r") as fd:
     config = json.load(fd)
 checkpoint_mode = argv[1]
-gamma = 1e-5 if "regularize" in checkpoint_mode else 0
+gamma = 1e-3 if "regularize" in checkpoint_mode else 0
 init_lr = config["lr"]
 if "regularize" in checkpoint_mode:
-    checkpoint_mode = checkpoint_mode[:-len("-regularize")]
+    checkpoint_mode = checkpoint_mode[:len("-regularize")]
     print("NEW CHECKPOINT MODE", checkpoint_mode, checkpoint_mode == "ours-grad-avg")
-def custom_loss(net1,net2,net3):
+def custom_loss(net1,net2,net3,itr):
     l = 0
     count = 0
     if net3 == None:
@@ -46,12 +46,14 @@ def custom_loss(net1,net2,net3):
     else:
 
         for p1,p2,p3 in zip(net1.parameters(), net2.parameters(), net3.parameters()):
-            count += 1
-
-            l += 1-F.cosine_similarity(p1.view(-1), (0.5*p2 + 0.5*p3).view(-1),dim=0)
-    l = l / count
+            
+            p1.grad -=  max(0.25,math.exp(-itr/10_000))*gamma * (p1 - (0.5*p2 + 0.5*p3))
+            # l += 1-F.cosine_similarity(p1.view(-1), (0.5*p2 + 0.5*p3).view(-1),dim=0)
+    
     return l
 
+
+            
 dmodel = config["dmodel"]
 num_heads = config["num_heads"]
 n_layers_per_stage = config["n_layers_per_stage"]
@@ -61,8 +63,8 @@ batch_size = config["batch_size"]
 lr_scale = config["lr_scale"]
 mb_count = config["mb_count"]
 validation_amount = config["validation"]
-max_iterations = config["max_iterations"]
-init_lr = config["lr"]
+max_iterations = config["max_iterations"] 
+
 
 device = argv[2]
 num_warmup_steps = 2000
@@ -85,7 +87,7 @@ def lr_lambda(current_step: int) -> float:
     )
     return max(0.0, cosine_lr_multiple)
 
-
+    
 # make the tokenizer
 def make_optim(params,lr):
     return AdamW(params, lr, betas=(0.9, 0.97), weight_decay=0)
@@ -97,11 +99,11 @@ if config["architecture"] == "LLaMa":
     torch.manual_seed(34107)
     s0 = LLamaFirstStage(tokenizer.vocab_size,dmodel=dmodel,num_heads=num_heads,
                     device=device, n_layers=0, ctx_size=seq_l,padding_idx=tokenizer.pad_id,de_embed=True)
-
+    
     stages = [s0]
 
     # Make the stages:
-
+    
     for _ in range(n_stages):
         torch.manual_seed(34107)
         stages.append(LLamaStage(dmodel=dmodel,num_heads=num_heads,
@@ -160,7 +162,7 @@ once = True
 for s in stages:
     sizes = []
     len_sizes = []
-
+    
     for param in s.parameters():
         sizes.append(param.shape)
         len_sizes.append(len(param.view(-1)))
@@ -176,7 +178,7 @@ iter_vs = iter(validation_dataset)
 t1 = time()
 mb_size = batch_size * dmodel * seq_l * 8
 
-for _ in range(mb_count):
+for _ in range(mb_count): 
     with torch.no_grad():
         x = next(iter_vs)
         x = x.to(device)
@@ -186,8 +188,8 @@ for _ in range(mb_count):
                 x = s.embed(x)
             else:
                 x = s(x)
-
-
+                
+                    
         x = stages[0].forward_end(x)
 t1 = (time() - t1)
 # 100 MB/s or ~800Mb/s
@@ -198,7 +200,7 @@ print("time for dp", (2*world_size - 1) * sum(vls[-1][1]) * 8 / (0.2*1024**3))
 total_time = t1 * 2.5 + (2*world_size - 1) * sum(vls[-1][1]) * 8 / (0.2*1024**3) # on same cluster large devices
 total_time *=  1 # synchronisation
 print("total time per iteration ", total_time)
-iterations_per_h = 60*60 / total_time
+iterations_per_h = 60*60 / total_time 
 print(60*60 / total_time, 100 - h_failure_probability)
 
 # iter_success_probability = ((100 - h_failure_probability)/100)**(total_time / 3600)
@@ -228,9 +230,9 @@ for itr in range(max_iterations):
             can_fail = random.random() > iter_success_probability
             if can_fail:
                 failures[s] = random.randint(0,mb_count-1)
-
-
-        for mbid in range(mb_count):
+        
+        
+        for mbid in range(mb_count): 
             x = None
             flg = True
             idx = 0
@@ -271,18 +273,18 @@ for itr in range(max_iterations):
                         optimizers[i] = make_optim(s.parameters(),lr = lr_scale*init_lr)
                         del m1
                     elif checkpoint_mode == "ours-random":
-
+                        
                         stages[i] = LLamaStage(dmodel=dmodel,num_heads=num_heads,
                                 device=device, n_layers=n_layers_per_stage, ctx_size=seq_l,padding_idx=tokenizer.pad_id)
                         s = stages[i]
                         optimizers[i] = make_optim(s.parameters(),lr = lr_scale*init_lr)
-
+                            
                     elif checkpoint_mode == "ours-grad-avg":
                         if i == len(stages)-1:
-
+                            
                             s.load_state_dict(deepcopy(stages[i-1].state_dict()))
                             optimizers[i] = make_optim(s.parameters(),lr = lr_scale*init_lr)
-                        elif i == 1:
+                        elif i == 1: 
                             s.load_state_dict(deepcopy(stages[i+1].state_dict()))
                             optimizers[i] = make_optim(s.parameters(),lr = lr_scale*init_lr)
                         else:
@@ -294,12 +296,12 @@ for itr in range(max_iterations):
                             for key in m1:
                                 m3[key] = (alpha*m1[key] + beta*m2[key]) / (alpha + beta)
                             s.load_state_dict(m3)
-
-                            optimizers[i] = make_optim(s.parameters(),lr = lr_scale*init_lr)
+                            
+                            optimizers[i] = make_optim(s.parameters(),lr = init_lr)
                             del m3
                             del m2
                             del m1
-
+                    
                     elif checkpoint_mode == "one":
                         s.load_state_dict(deepcopy(checkpoints[i]))
                         optimizers[i] = make_optim(s.parameters(),lr = init_lr)
@@ -311,20 +313,20 @@ for itr in range(max_iterations):
                             optimizers[idx].load_state_dict(deepcopy(optimizer_checkpoints[idx]))
                     elif checkpoint_mode == "no_failure":
                         can_fail = False
-
+                    
 
                 if i == 0:
                     x = s.embed(x)
                 else:
                     x = s(x)
             x = stages[0].forward_end(x)
-
+            
             loss = causalLLMLoss(x,target,tokenizer.vocab_size)
-
+            
             loss = loss / mb_count
-
+            
             this_round_loss += loss.item()
-
+            
             loss.backward()
         print(itr,this_round_loss)
         if gamma > 0:
@@ -337,8 +339,8 @@ for itr in range(max_iterations):
                     continue
                     loss += gamma*custom_loss(stages[i_s], stages[i_s-1],None) / len(stages)
                 else:
-                    loss += gamma*custom_loss(stages[i_s], stages[i_s-1], stages[i_s+1]) / len(stages)
-            loss.backward()
+                    custom_loss(stages[i_s], stages[i_s-1], stages[i_s+1], itr)
+            
         dist.barrier() # wait for everyone
 
         # Sync weights
@@ -346,7 +348,7 @@ for itr in range(max_iterations):
             tmp = []
             for param in s.parameters():
                 if param.grad == None:
-                    tmp.append(torch.zeros_like(param,device="cpu").view(-1))
+                    tmp.append(torch.zeros_like(param,device="cpu").view(-1))                      
                     continue
                 tmp.append(param.grad.view(-1))
                 param.grad = None
@@ -355,36 +357,36 @@ for itr in range(max_iterations):
             tmp = torch.split(prev_grad, vls[idx][1])
             for i, param in enumerate(s.parameters()):
                 param.grad = tmp[i].view(vls[idx][0][i]).to(device)/world_size # average
-
+            
         for i,s in enumerate(stages):
             tmp = []
-
+            
             for p in s.parameters():
                 if p.grad == None:
-                    tmp.append(zeros_like(p.data).view(-1))
+                    tmp.append(zeros_like(p.data).view(-1))   
                     continue
                 tmp.append(p.grad.view(-1))
-
+                
             tmp = cat(tmp)
             prev_gradient_norm[i] = torch.linalg.vector_norm(tmp).item() + 0.00001
             torch.nn.utils.clip_grad_norm_(s.parameters(),max_norm=1.0)
-
+        
         for optim in optimizers:
-            optim.step()
-
+            optim.step() 
+            
         if itr % 100 == 0 and rank == 0:
             print("SAVING ITERATION",itr)
             for i,s in enumerate(stages):
-                torch.save(s.state_dict(), f"mdl_{i}.pth")
+                torch.save(s.state_dict(), f"mdl_{i}.pth") 
                 torch.save(optimizers[i].state_dict(), f"optim_{i}.pth")
             print("SAVED")
-
-
+        
+        
         if itr % 500 == 0:
             perplxities = []
             normal_loss = []
             iter_vs = iter(validation_dataset)
-            for _ in range(validation_amount):
+            for _ in range(validation_amount): 
                 with torch.no_grad():
                     x = next(iter_vs)
                     x = x.to(device)
@@ -402,12 +404,16 @@ for itr in range(max_iterations):
                     normal_loss.append(loss.item())
             print("VALIDATION LOSS",itr,sum(perplxities)/len(perplxities))
             print("NORMAL LOSS",itr,sum(normal_loss)/len(normal_loss))
-
+                
         dist.barrier()
         print("time:",time()-t1)
-
+        
         cuda.empty_cache()
     except StopIteration:
         iter_ds = iter(ds)
     except Exception:
         print(traceback.format_exc())
+
+
+
+
