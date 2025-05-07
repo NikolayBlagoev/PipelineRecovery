@@ -41,8 +41,9 @@ def custom_loss(net1,net2,net3,itr):
     count = 0
     if net3 == None:
         for p1,p2 in zip(net1.parameters(), net2.parameters()):
-            count += 1
-            l += 0.5*(p1 - p2).abs().mean()
+            
+            
+            p1.grad -=  max(0.25,math.exp(-itr/10_000)) * 0.75 * gamma * (p1 - p2)
     else:
 
         for p1,p2,p3 in zip(net1.parameters(), net2.parameters(), net3.parameters()):
@@ -333,11 +334,9 @@ for itr in range(max_iterations):
             loss = 0
             for i_s in range(1,len(stages)):
                 if i_s == 1:
-                    continue
-                    loss += gamma*custom_loss(stages[i_s], stages[i_s+1],None) / len(stages)
+                    custom_loss(stages[i_s], stages[i_s+1], None, itr)
                 elif i_s == len(stages) - 1:
-                    continue
-                    loss += gamma*custom_loss(stages[i_s], stages[i_s-1],None) / len(stages)
+                    custom_loss(stages[i_s], stages[i_s-1], None, itr)
                 else:
                     custom_loss(stages[i_s], stages[i_s-1], stages[i_s+1], itr)
             
