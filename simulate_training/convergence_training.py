@@ -31,7 +31,7 @@ start_iter = int(argv[7]) if len(argv) > 7 else 0
 with open(argv[6],"r") as fd:
     config = json.load(fd)
 checkpoint_mode = argv[1]
-gamma = 1e-3 if "regularize" in checkpoint_mode else 0
+gamma = 1e-5 if "regularize" in checkpoint_mode else 0
 init_lr = config["lr"]
 if "regularize" in checkpoint_mode:
     checkpoint_mode = checkpoint_mode[:len("-regularize")]
