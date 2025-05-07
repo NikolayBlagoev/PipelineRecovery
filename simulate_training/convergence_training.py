@@ -43,7 +43,7 @@ def custom_loss(net1,net2,net3,itr):
         for p1,p2 in zip(net1.parameters(), net2.parameters()):
             
             
-            p1.grad -=  max(0.25,math.exp(-itr/10_000)) * 0.75 * gamma * (p1 - p2)
+            p1.grad -=  max(0.25,math.exp(-itr/10_000)) * 0.5 * gamma * (p1 - p2)
     else:
 
         for p1,p2,p3 in zip(net1.parameters(), net2.parameters(), net3.parameters()):
@@ -285,9 +285,11 @@ for itr in range(max_iterations):
                             
                             s.load_state_dict(deepcopy(stages[i-1].state_dict()))
                             optimizers[i] = make_optim(s.parameters(),lr = lr_scale*init_lr)
+                            optimizers[i].zero_grad()
                         elif i == 1: 
                             s.load_state_dict(deepcopy(stages[i+1].state_dict()))
                             optimizers[i] = make_optim(s.parameters(),lr = lr_scale*init_lr)
+                            optimizers[i].zero_grad()
                         else:
                             m1 = deepcopy(stages[i+1].state_dict())
                             m2 = deepcopy(stages[i-1].state_dict())
@@ -299,6 +301,7 @@ for itr in range(max_iterations):
                             s.load_state_dict(m3)
                             
                             optimizers[i] = make_optim(s.parameters(),lr = init_lr)
+                            optimizers[i].zero_grad()
                             del m3
                             del m2
                             del m1
