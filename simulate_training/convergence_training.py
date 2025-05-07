@@ -32,7 +32,7 @@ with open(argv[6],"r") as fd:
     config = json.load(fd)
 checkpoint_mode = argv[1]
 gamma = 1e-3 if "regularize" in checkpoint_mode else 0
-
+init_lr = config["lr"]
 if "regularize" in checkpoint_mode:
     checkpoint_mode = checkpoint_mode[:len("-regularize")]
 def custom_loss(net1,net2,net3):
@@ -45,11 +45,13 @@ def custom_loss(net1,net2,net3):
     else:
 
         for p1,p2,p3 in zip(net1.parameters(), net2.parameters(), net3.parameters()):
-            count += 1
             
-            l += 1-F.cosine_similarity(p1.view(-1), (0.5*p2 + 0.5*p3).view(-1),dim=0)
-    l = l / count
+            p1.grad -= init_lr * gamma * (p1 - (0.5*p2 + 0.5*p3))
+            # l += 1-F.cosine_similarity(p1.view(-1), (0.5*p2 + 0.5*p3).view(-1),dim=0)
+    
     return l
+
+
             
 dmodel = config["dmodel"]
 num_heads = config["num_heads"]
@@ -61,7 +63,7 @@ lr_scale = config["lr_scale"]
 mb_count = config["mb_count"]
 validation_amount = config["validation"]
 max_iterations = config["max_iterations"] 
-init_lr = config["lr"]
+
 
 device = argv[2]
 num_warmup_steps = 2000
@@ -336,7 +338,7 @@ for itr in range(max_iterations):
                     continue
                     loss += gamma*custom_loss(stages[i_s], stages[i_s-1],None) / len(stages)
                 else:
-                    loss += gamma*custom_loss(stages[i_s], stages[i_s-1], stages[i_s+1]) / len(stages)
+                    custom_loss(stages[i_s], stages[i_s-1], stages[i_s+1])
             loss.backward()
         dist.barrier() # wait for everyone
 
