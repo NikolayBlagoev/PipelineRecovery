@@ -295,8 +295,8 @@ for itr in range(max_iterations):
                             m2 = deepcopy(stages[i-1].state_dict())
                             alpha = abs(prev_gradient_norm[i+1]) + 0.0001
                             beta = abs(prev_gradient_norm[i-1]) + 0.0001
-                            alpha = min(alpha,1.0)
-                            beta = min(beta,1.0)
+                            alpha = 1.0
+                            beta = 1.0
                             stages[i] = LLamaStage(dmodel=dmodel,num_heads=num_heads,
                                 device=device, n_layers=n_layers_per_stage, ctx_size=seq_l,padding_idx=tokenizer.pad_id)
                             
