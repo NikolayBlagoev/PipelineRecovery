@@ -295,8 +295,7 @@ for itr in range(max_iterations):
                             m2 = deepcopy(stages[i-1].state_dict())
                             alpha = abs(prev_gradient_norm[i+1]) + 0.0001
                             beta = abs(prev_gradient_norm[i-1]) + 0.0001
-                            alpha = 1.0
-                            beta = 1.0
+                            
                             stages[i] = LLamaStage(dmodel=dmodel,num_heads=num_heads,
                                 device=device, n_layers=n_layers_per_stage, ctx_size=seq_l,padding_idx=tokenizer.pad_id)
                             
@@ -339,15 +338,7 @@ for itr in range(max_iterations):
             
             loss.backward()
         print(itr,this_round_loss)
-        if gamma > 0:
-            loss = 0
-            for i_s in range(1,len(stages)):
-                if i_s == 1:
-                    custom_loss(stages[i_s], stages[i_s+1], None, itr)
-                elif i_s == len(stages) - 1:
-                    custom_loss(stages[i_s], stages[i_s-1], None, itr)
-                else:
-                    custom_loss(stages[i_s], stages[i_s-1], stages[i_s+1], itr)
+        
             
         dist.barrier() # wait for everyone
 
@@ -365,7 +356,7 @@ for itr in range(max_iterations):
             tmp = torch.split(prev_grad, vls[idx][1])
             for i, param in enumerate(s.parameters()):
                 param.grad = tmp[i].view(vls[idx][0][i]).to(device)/world_size # average
-            
+        
         for i,s in enumerate(stages):
             tmp = []
             
@@ -378,7 +369,14 @@ for itr in range(max_iterations):
             tmp = cat(tmp)
             prev_gradient_norm[i] = torch.linalg.vector_norm(tmp).item() + 0.00001
             torch.nn.utils.clip_grad_norm_(s.parameters(),max_norm=1.0)
-        
+        if gamma > 0:
+            for i_s in range(1,len(stages)):
+                if i_s == 1:
+                    custom_loss(stages[i_s], stages[i_s+1], None, itr)
+                elif i_s == len(stages) - 1:
+                    custom_loss(stages[i_s], stages[i_s-1], None, itr)
+                else:
+                    custom_loss(stages[i_s], stages[i_s-1], stages[i_s+1], itr)
         for optim in optimizers:
             optim.step() 
             
