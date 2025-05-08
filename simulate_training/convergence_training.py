@@ -106,7 +106,7 @@ if config["architecture"] == "LLaMa":
     # Make the stages:
     
     for _ in range(n_stages):
-        torch.manual_seed(34107)
+        # torch.manual_seed(34107)
         stages.append(LLamaStage(dmodel=dmodel,num_heads=num_heads,
                     device=device, n_layers=n_layers_per_stage, ctx_size=seq_l,padding_idx=tokenizer.pad_id))
 elif config["architecture"] == "GPT":
