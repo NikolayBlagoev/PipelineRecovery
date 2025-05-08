@@ -225,7 +225,7 @@ for itr in range(max_iterations):
         failures = [-1 for _ in range(len(stages))]
         for s in range(len(stages)):
             stages[s].train()
-            if s < 2 or s == len(stages) - 1:
+            if s == 0:
                 # holds embedding and dembedding
                 continue
             can_fail = random.random() > iter_success_probability
@@ -377,7 +377,7 @@ for itr in range(max_iterations):
                 tmp.append(p.grad.view(-1))
                 
             tmp = cat(tmp)
-            prev_gradient_norm[i] = prev_gradient_norm[i]*0.7 + 0.3*abs(torch.linalg.vector_norm(tmp).item())
+            prev_gradient_norm[i] = prev_gradient_norm[i]*0 + 1.0*abs(torch.linalg.vector_norm(tmp).item())
             
         if gamma > 0:
             for i_s in range(1,len(stages)):
