@@ -269,9 +269,11 @@ for itr in range(max_iterations):
                         else:
                             selector = i - 1
                         m1 = deepcopy(stages[selector].state_dict())
-                        for key in m1:
-                            m1[key] = 0*m1[key]
+                        
                         s.load_state_dict(m1)
+                        for ln in range(len(s.layers)):
+                            s.layers[ln].mlp.down_proj.weight = torch.nn.parameter.Parameter(torch.zeros_like(s.layers[ln].mlp.down_proj.weight))
+                    
                         optimizers[i] = make_optim(s.parameters(),lr = lr_scale*init_lr)
                         del m1
                     elif checkpoint_mode == "ours-random":
