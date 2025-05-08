@@ -400,7 +400,7 @@ for itr in range(max_iterations):
         
         for i,s in enumerate(stages):
             tmp = []
-            
+            torch.nn.utils.clip_grad_norm_(s.parameters(),max_norm=1.0)
             for p in s.parameters():
                 if p.grad == None:
                     tmp.append(zeros_like(p.data).view(-1))   
@@ -408,8 +408,8 @@ for itr in range(max_iterations):
                 tmp.append(p.grad.view(-1))
                 
             tmp = cat(tmp)
-            prev_gradient_norm[i] = torch.linalg.vector_norm(tmp).item() + 0.00001
-            torch.nn.utils.clip_grad_norm_(s.parameters(),max_norm=1.0)
+            prev_gradient_norm[i] = prev_gradient_norm[i]*0.7 + 0.3*abs(torch.linalg.vector_norm(tmp).item())
+            
         if gamma > 0:
             for i_s in range(1,len(stages)):
                 if i_s == 1:
