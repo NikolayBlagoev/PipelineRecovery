@@ -225,7 +225,7 @@ for itr in range(max_iterations):
         failures = [-1 for _ in range(len(stages))]
         for s in range(len(stages)):
             stages[s].train()
-            if s == 0:
+            if s < 2 or s == len(stages) - 1:
                 # holds embedding and dembedding
                 continue
             can_fail = random.random() > iter_success_probability
