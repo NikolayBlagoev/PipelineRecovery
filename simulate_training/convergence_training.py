@@ -113,13 +113,13 @@ elif config["architecture"] == "GPT":
     tokenizer = GPTTokenizer()
     torch.manual_seed(34107)
     s0 = GPTFirstStage(tokenizer.vocab_size, dmodel=dmodel, num_heads=num_heads, device=device,
-                            n_layers=0, ctx_size=seq_l, padding_idx=tokenizer.pad_id, de_embed=True)
+                            n_layers=0, ctx_size=seq_l, padding_idx=tokenizer.pad_id, de_embed=True,dropout_prob=0)
     stages = [s0]
 
     # Make the stages:
     for _ in range(n_stages):
         stages.append(GPTStage(dmodel=dmodel,num_heads=num_heads,
-                    device=device, n_layers=n_layers_per_stage, ctx_size=seq_l))
+                    device=device, n_layers=n_layers_per_stage, ctx_size=seq_l,dropout_prob=0))
 
 # print(len(stages))
 if start_iter > 0:
@@ -225,7 +225,7 @@ for itr in range(max_iterations):
         failures = [-1 for _ in range(len(stages))]
         for s in range(len(stages)):
             stages[s].train()
-            if s == 0 or s == 1 or s == len(stages) - 1:
+            if s == 0:
                 # holds embedding and dembedding
                 continue
             can_fail = random.random() > iter_success_probability
