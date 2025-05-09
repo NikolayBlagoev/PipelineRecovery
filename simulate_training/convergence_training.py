@@ -389,7 +389,7 @@ for itr in range(max_iterations):
                     custom_loss(stages[i_s], stages[i_s-1], stages[i_s+1], itr)
         for optim in optimizers:
             optim.optimizer.step()
-            optim.step() 
+            optim.step(itr) 
             
         if itr % 100 == 0 and rank == 0:
             print("SAVING ITERATION",itr)
