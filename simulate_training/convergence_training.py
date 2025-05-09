@@ -68,7 +68,7 @@ max_iterations = config["max_iterations"]
 
 
 device = argv[2]
-num_warmup_steps = 1000
+num_warmup_steps = 500
 num_training_steps = max_iterations
 max_iterations = max_iterations - start_iter
 num_cycles = 0.5
