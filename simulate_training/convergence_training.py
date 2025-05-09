@@ -68,7 +68,7 @@ max_iterations = config["max_iterations"]
 
 
 device = argv[2]
-num_warmup_steps = 2000
+num_warmup_steps = 1000
 num_training_steps = max_iterations
 max_iterations = max_iterations - start_iter
 num_cycles = 0.5
@@ -91,7 +91,7 @@ def lr_lambda(current_step: int) -> float:
     
 # make the tokenizer
 def make_optim(params,lr):
-    return AdamW(params, lr, betas=(0.9, 0.97), weight_decay=0)
+    return LambdaLR(AdamW(params, lr, betas=(0.9, 0.97), weight_decay=0),lr_lambda)
 
 world_data_size = world_size
 rank_data_size = rank
@@ -210,13 +210,13 @@ print("Iteration failure probability ", 1 - iter_success_probability)
 for itr in range(max_iterations):
     try:
         for optim in optimizers:
-            optim.zero_grad()
+            optim.optimizer.zero_grad()
         t1 = time()
         # checkpoint:
         if checkpoint_mode in ["whole_model", "one"]:
             optimizer_checkpoints.clear()
             for optim in optimizers:
-                optimizer_checkpoints.append(deepcopy(optim.state_dict()))
+                optimizer_checkpoints.append(deepcopy(optim.optimizer.state_dict()))
             checkpoints.clear()
             for s in stages:
                 checkpoints.append(deepcopy(s.state_dict()))
@@ -288,14 +288,14 @@ for itr in range(max_iterations):
                             s.load_state_dict(deepcopy(stages[i-1].state_dict()))
                             optimizers[i] = make_optim(s.parameters(),lr = init_lr)
                             for optim in optimizers:
-                                optim.zero_grad()
+                                optim.optimizer.optimizer.zero_grad()
                             
                             
                         elif i == 1: 
                             s.load_state_dict(deepcopy(stages[i+1].state_dict()))
                             optimizers[i] = make_optim(s.parameters(),lr = init_lr)
                             for optim in optimizers:
-                                optim.zero_grad()
+                                optim.optimizer.optimizer.zero_grad()
                             
                             
                         else:
@@ -315,7 +315,7 @@ for itr in range(max_iterations):
                             
                             optimizers[i] = make_optim(s.parameters(),lr = init_lr)
                             for optim in optimizers:
-                                optim.zero_grad()
+                                optim.optimizer.optimizer.zero_grad()
                             
                             del m3
                             del m2
@@ -388,7 +388,8 @@ for itr in range(max_iterations):
                 else:
                     custom_loss(stages[i_s], stages[i_s-1], stages[i_s+1], itr)
         for optim in optimizers:
-            optim.step() 
+            optim.optimizer.step()
+            optim.step(itr) 
             
         if itr % 100 == 0 and rank == 0:
             print("SAVING ITERATION",itr)
