@@ -90,8 +90,8 @@ def lr_lambda(current_step: int) -> float:
 
     
 # make the tokenizer
-def make_optim(params,lr):
-    return LambdaLR(AdamW(params, lr, betas=(0.9, 0.97), weight_decay=0),lr_lambda)
+def make_optim(params,lr,itr = 0):
+    return LambdaLR(AdamW(params, lr, betas=(0.9, 0.97), weight_decay=0),lr_lambda,last_epoch=itr)
 
 world_data_size = world_size
 rank_data_size = rank
@@ -262,7 +262,7 @@ for itr in range(max_iterations):
                         else:
                             selector = i - 1
                         s.load_state_dict(deepcopy(stages[selector].state_dict()))
-                        optimizers[i] = make_optim(s.parameters(),lr = lr_scale*init_lr)
+                        optimizers[i] = make_optim(s.parameters(),lr = lr_scale*init_lr,itr=itr)
                     elif checkpoint_mode == "ours-zero":
                         if i == 1:
                             selector = i + 1
@@ -274,26 +274,26 @@ for itr in range(max_iterations):
                         for ln in range(len(s.layers)):
                             s.layers[ln].mlp.down_proj.weight = torch.nn.parameter.Parameter(torch.zeros_like(s.layers[ln].mlp.down_proj.weight))
                     
-                        optimizers[i] = make_optim(s.parameters(),lr = lr_scale*init_lr)
+                        optimizers[i] = make_optim(s.parameters(),lr = lr_scale*init_lr,itr=itr)
                         del m1
                     elif checkpoint_mode == "ours-random":
                         
                         stages[i] = LLamaStage(dmodel=dmodel,num_heads=num_heads,
                                 device=device, n_layers=n_layers_per_stage, ctx_size=seq_l,padding_idx=tokenizer.pad_id)
                         s = stages[i]
-                        optimizers[i] = make_optim(s.parameters(),lr = lr_scale*init_lr)
+                        optimizers[i] = make_optim(s.parameters(),lr = lr_scale*init_lr,itr=itr)
                             
                     elif checkpoint_mode == "ours-grad-avg":
                         if i == len(stages)-1:
                             s.load_state_dict(deepcopy(stages[i-1].state_dict()))
-                            optimizers[i] = make_optim(s.parameters(),lr = init_lr)
+                            optimizers[i] = make_optim(s.parameters(),lr = init_lr,itr=itr)
                             for optim in optimizers:
                                 optim.optimizer.optimizer.zero_grad()
                             
                             
                         elif i == 1: 
                             s.load_state_dict(deepcopy(stages[i+1].state_dict()))
-                            optimizers[i] = make_optim(s.parameters(),lr = init_lr)
+                            optimizers[i] = make_optim(s.parameters(),lr = init_lr,itr=itr)
                             for optim in optimizers:
                                 optim.optimizer.optimizer.zero_grad()
                             
@@ -313,7 +313,7 @@ for itr in range(max_iterations):
                             stages[i].load_state_dict(m3)
                             s = stages[i]
                             
-                            optimizers[i] = make_optim(s.parameters(),lr = init_lr)
+                            optimizers[i] = make_optim(s.parameters(),lr = init_lr,itr=itr)
                             for optim in optimizers:
                                 optim.optimizer.optimizer.zero_grad()
                             
@@ -323,12 +323,12 @@ for itr in range(max_iterations):
                     
                     elif checkpoint_mode == "one":
                         s.load_state_dict(deepcopy(checkpoints[i]))
-                        optimizers[i] = make_optim(s.parameters(),lr = init_lr)
+                        optimizers[i] = make_optim(s.parameters(),lr = init_lr,itr=itr)
                         optimizers[i].load_state_dict(deepcopy(optimizer_checkpoints[i]))
                     elif checkpoint_mode == "whole_model":
                         for idx,s2 in enumerate(stages):
                             stages[idx].load_state_dict(deepcopy(checkpoints[idx]))
-                            optimizers[idx] = make_optim(stages[idx].parameters(),lr = init_lr)
+                            optimizers[idx] = make_optim(stages[idx].parameters(),lr = init_lr,itr=itr)
                             optimizers[idx].load_state_dict(deepcopy(optimizer_checkpoints[idx]))
                     elif checkpoint_mode == "no_failure":
                         can_fail = False
@@ -389,7 +389,7 @@ for itr in range(max_iterations):
                     custom_loss(stages[i_s], stages[i_s-1], stages[i_s+1], itr)
         for optim in optimizers:
             optim.optimizer.step()
-            optim.step(itr) 
+            optim.step() 
             
         if itr % 100 == 0 and rank == 0:
             print("SAVING ITERATION",itr)
