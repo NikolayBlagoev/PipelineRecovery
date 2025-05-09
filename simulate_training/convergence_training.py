@@ -91,7 +91,7 @@ def lr_lambda(current_step: int) -> float:
     
 # make the tokenizer
 def make_optim(params,lr,itr = 0):
-    return LambdaLR(AdamW(params, lr, betas=(0.9, 0.97), weight_decay=0),lr_lambda,last_epoch=itr)
+    return LambdaLR(AdamW(params, lr, betas=(0.9, 0.97), weight_decay=0),lr_lambda)
 
 world_data_size = world_size
 rank_data_size = rank
