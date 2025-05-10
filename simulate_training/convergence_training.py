@@ -303,10 +303,12 @@ for itr in range(max_iterations):
                             m2 = deepcopy(stages[i-1].state_dict())
                             alpha = abs(prev_gradient_norm[i+1]) + 0.0001
                             beta = abs(prev_gradient_norm[i-1]) + 0.0001
-                            
-                            stages[i] = LLamaStage(dmodel=dmodel,num_heads=num_heads,
-                                device=device, n_layers=n_layers_per_stage, ctx_size=seq_l,padding_idx=tokenizer.pad_id)
-                            
+                            if config["architecture"] == "LLaMa":
+                                stages[i] = LLamaStage(dmodel=dmodel,num_heads=num_heads,
+                                    device=device, n_layers=n_layers_per_stage, ctx_size=seq_l,padding_idx=tokenizer.pad_id)
+                            else:
+                                stages[i] = GPTStage(dmodel=dmodel,num_heads=num_heads,
+                                    device=device, n_layers=n_layers_per_stage, ctx_size=seq_l,dropout_prob=0)
                             m3 = stages[i].state_dict()
                             for key in m1:
                                 m3[key] = (alpha*m1[key] + beta*m2[key]) / (alpha + beta)
