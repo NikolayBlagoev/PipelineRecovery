@@ -288,14 +288,14 @@ for itr in range(max_iterations):
                             s.load_state_dict(deepcopy(stages[i-1].state_dict()))
                             optimizers[i] = make_optim(s.parameters(),lr = init_lr,itr=itr)
                             for optim in optimizers:
-                                optim.optimizer.optimizer.zero_grad()
+                                optim.optimizer.zero_grad()
                             
                             
                         elif i == 1: 
                             s.load_state_dict(deepcopy(stages[i+1].state_dict()))
                             optimizers[i] = make_optim(s.parameters(),lr = init_lr,itr=itr)
                             for optim in optimizers:
-                                optim.optimizer.optimizer.zero_grad()
+                                optim.optimizer.zero_grad()
                             
                             
                         else:
@@ -315,7 +315,7 @@ for itr in range(max_iterations):
                             
                             optimizers[i] = make_optim(s.parameters(),lr = init_lr,itr=itr)
                             for optim in optimizers:
-                                optim.optimizer.optimizer.zero_grad()
+                                optim.optimizer.zero_grad()
                             
                             del m3
                             del m2
