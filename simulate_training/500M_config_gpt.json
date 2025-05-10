@@ -9,7 +9,7 @@
     "seq_l": 1024,
     "batch_size": 8,
     "mb_count": 8,
-    "lr_scale": 1.1,
+    "lr_scale": 1.2,
     "max_iterations": 30001,
     "lr": 0.0001,
     "16": 0.004,
