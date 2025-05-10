@@ -9,7 +9,7 @@ from sys import argv
 import random
 random.seed(42)
 State.set_seed(42)
-from torch.optim import AdamW
+from torch.optim import AdamW, Adam
 import torch.nn.functional as F
 from torch.optim.lr_scheduler import LambdaLR
 from torch import save, cuda, zeros_like, cat, mean, std
@@ -91,7 +91,7 @@ def lr_lambda(current_step: int) -> float:
     
 # make the tokenizer
 def make_optim(params,lr,itr = 0):
-    return LambdaLR(AdamW(params, lr, betas=(0.9, 0.999), weight_decay=0),lr_lambda)
+    return LambdaLR(Adam(params, lr, betas=(0.9, 0.999), weight_decay=0),lr_lambda)
 
 world_data_size = world_size
 rank_data_size = rank
