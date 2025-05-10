@@ -76,7 +76,7 @@ def lr_lambda(current_step: int) -> float:
     # linear warmup phase
     current_step += start_iter
     if current_step < num_warmup_steps:
-        return current_step / max(1, num_warmup_steps)
+        return max(5e-6,current_step / max(1, num_warmup_steps))
 
     # cosine
     progress = (current_step - num_warmup_steps) / max(
@@ -86,7 +86,7 @@ def lr_lambda(current_step: int) -> float:
     cosine_lr_multiple = 0.5 * (
             1.0 + math.cos(math.pi * num_cycles * 2.0 * progress)
     )
-    return max(0.0, cosine_lr_multiple)
+    return max(5e-6, cosine_lr_multiple)
 
     
 # make the tokenizer
