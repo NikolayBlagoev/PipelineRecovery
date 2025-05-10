@@ -68,17 +68,17 @@ max_iterations = config["max_iterations"]
 
 
 device = argv[2]
-num_warmup_steps = 20000
+num_warmup_steps = 500
 num_training_steps = max_iterations
 max_iterations = max_iterations - start_iter
 num_cycles = 0.5
 def lr_lambda(current_step: int) -> float:
-    # linear warmup phase
     current_step += start_iter
+    
     if current_step < num_warmup_steps:
-        return max(1e-5,current_step / max(1, num_warmup_steps))
-
-    # cosine
+        return current_step / max(1, num_warmup_steps)
+    if current_step > 10000:
+        return 1/10
     progress = (current_step - num_warmup_steps) / max(
             1, num_training_steps - num_warmup_steps
     )
@@ -86,12 +86,12 @@ def lr_lambda(current_step: int) -> float:
     cosine_lr_multiple = 0.5 * (
             1.0 + math.cos(math.pi * num_cycles * 2.0 * progress)
     )
-    return max(1e-5, cosine_lr_multiple)
+    return max(1/10, 1/10 + cosine_lr_multiple)
 
     
 # make the tokenizer
 def make_optim(params,lr,itr = 0):
-    return LambdaLR(AdamW(params, lr, betas=(0.9, 0.97), weight_decay=0),lr_lambda)
+    return LambdaLR(AdamW(params, lr, betas=(0.9, 0.999), weight_decay=0),lr_lambda)
 
 world_data_size = world_size
 rank_data_size = rank
