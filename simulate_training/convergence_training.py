@@ -182,7 +182,7 @@ for _ in range(mb_count):
             if i == 0:
                 x = s.embed(x)
             else:
-                print(i,i//2)
+                # print(i,i//2)
                 x = x.to(f"cuda:{i//2}")
                 x = s(x)
                 
@@ -364,7 +364,7 @@ for itr in range(max_iterations):
         stages_tmps = []
         for i,s in enumerate(stages):
             tmp = []
-            tmp_2 = []
+            tmp2 = []
             torch.nn.utils.clip_grad_norm_(s.parameters(),max_norm=1.0)
             for p in s.parameters():
                 if p.grad == None:
