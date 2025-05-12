@@ -336,6 +336,11 @@ for itr in range(max_iterations):
                                 loss.backward()
                             print("ERROR",summed)
                             optimizers[i].optimizer.step()
+                            optimizers[i].optimizer.step()
+                            optimizers[i].optimizer.step()
+                            optimizers[i].optimizer.step()
+                            optimizers[i].optimizer.step()
+                            # equivalent to 5 * learning rate
                             optimizers[i].optimizer.zero_grad()
                         dist.barrier()
                         tmp = []
