@@ -385,9 +385,10 @@ for itr in range(max_iterations):
             err = (prev_gradient_norm[i-1]*stages_tmps[i-1] + prev_gradient_norm[i+1]*stages_tmps[i+1])/(prev_gradient_norm[i-1] + prev_gradient_norm[i+1]) - stages_tmps[i]
             if error_term != None:
                 err += error_term
-            err = torch.abs(err)
             if itr % 20 == 0:
                 error_term = err
+            err = torch.abs(err)
+            
             print(itr,i, "MAX l2", torch.max(err).item())
             print(itr,i, "MEAN l2", torch.mean(err).item())
             err = (prev_gradient_norm_inf[i-1]*stages_tmps[i-1] + prev_gradient_norm_inf[i+1]*stages_tmps[i+1])/(prev_gradient_norm_inf[i-1] + prev_gradient_norm_inf[i+1]) - stages_tmps[i]
