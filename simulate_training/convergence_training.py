@@ -377,7 +377,7 @@ for itr in range(max_iterations):
             tmp = cat(tmp)
             stages_tmps.append(cat(tmp2).to("cpu"))
             prev_gradient_norm[i] = prev_gradient_norm[i]*0 + 1.0*abs(torch.dot(tmp,tmp).item())
-            prev_gradient_norm_inf[i] = prev_gradient_norm[i]*0 + 1.0*abs(torch.linalg.vector_norm(tmp,ord="inf").item())
+            prev_gradient_norm_inf[i] = prev_gradient_norm[i]*0 + 1.0*abs(torch.linalg.vector_norm(tmp,ord=float("inf")).item())
         for i,s in enumerate(stages):
             if i < 2 or i == len(stages) - 1:
                 continue
