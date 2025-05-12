@@ -211,6 +211,7 @@ prev = None
 # iter_success_probability = ((100 - h_failure_probability)/100)**(total_time / 3600)
 iter_success_probability = 1.0 - config[str(h_failure_probability)]
 print("Iteration failure probability ", 1 - iter_success_probability)
+last_failure = 0
 for itr in range(max_iterations):
     try:
         for optim in optimizers:
@@ -237,7 +238,16 @@ for itr in range(max_iterations):
                 failures[s] = random.randint(0,mb_count-1)
                 failures[s] = 0
         
-        
+        if sum(failures) > -len(stages):
+            last_failure = 0
+
+        else:
+            last_failure += 1
+        if last_failure > 10:
+            last_failure = 0
+            can_fail = random.randint(2,len(stages)-2)
+            failures[can_fail] = 0
+            
         for mbid in range(mb_count): 
             x = None
             flg = True
