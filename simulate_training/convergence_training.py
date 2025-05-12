@@ -8,8 +8,8 @@ from copy import deepcopy
 from sys import argv
 from torch.nn.functional import mse_loss
 import random
-random.seed(1)
-State.set_seed(1)
+random.seed(42)
+State.set_seed(42)
 from torch.optim import AdamW, Adam
 import torch.nn.functional as F
 from torch.optim.lr_scheduler import LambdaLR
