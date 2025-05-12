@@ -199,7 +199,7 @@ total_time *=  1 # synchronisation
 print("total time per iteration ", total_time)
 iterations_per_h = 60*60 / total_time 
 print(60*60 / total_time, 100 - h_failure_probability)
-
+error_term = None
 # iter_success_probability = ((100 - h_failure_probability)/100)**(total_time / 3600)
 iter_success_probability = 1.0 - config[str(h_failure_probability)]
 print("Iteration failure probability ", 1 - iter_success_probability)
@@ -378,11 +378,16 @@ for itr in range(max_iterations):
             stages_tmps.append(cat(tmp2).to("cpu"))
             prev_gradient_norm[i] = prev_gradient_norm[i]*0 + 1.0*abs(torch.dot(tmp,tmp).item())
             prev_gradient_norm_inf[i] = prev_gradient_norm[i]*0 + 1.0*abs(torch.linalg.vector_norm(tmp,ord=float("inf")).item())
+         
         for i,s in enumerate(stages):
             if i < 2 or i == len(stages) - 1:
                 continue
             err = (prev_gradient_norm[i-1]*stages_tmps[i-1] + prev_gradient_norm[i+1]*stages_tmps[i+1])/(prev_gradient_norm[i-1] + prev_gradient_norm[i+1]) - stages_tmps[i]
+            if error_term != None:
+                err += error_term
             err = torch.abs(err)
+            if itr % 20 == 0:
+                error_term = err
             print(itr,i, "MAX l2", torch.max(err).item())
             print(itr,i, "MEAN l2", torch.mean(err).item())
             err = (prev_gradient_norm_inf[i-1]*stages_tmps[i-1] + prev_gradient_norm_inf[i+1]*stages_tmps[i+1])/(prev_gradient_norm_inf[i-1] + prev_gradient_norm_inf[i+1]) - stages_tmps[i]
