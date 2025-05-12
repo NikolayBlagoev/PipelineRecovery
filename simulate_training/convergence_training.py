@@ -354,8 +354,9 @@ for itr in range(max_iterations):
             
             loss.backward()
         print(itr,this_round_loss)
-        for el in prev:
-            el.clear()
+        if prev != None:
+            for el in prev:
+                el.clear()
         
         prev = input_output_cahce
         
