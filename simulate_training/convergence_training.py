@@ -348,8 +348,8 @@ for itr in range(max_iterations):
                         prev_grad = torch.cat(tmp).to("cpu")
                         dist.all_reduce(prev_grad, op = dist.ReduceOp.SUM)
                         tmp = torch.split(prev_grad, vls[idx][1])
-                        for i, param in enumerate(s.parameters()):
-                            param.data = tmp[i].view(vls[idx][0][i]).to(device)/world_size # average
+                        for pi, param in enumerate(s.parameters()):
+                            param.data = tmp[pi].view(vls[idx][0][pi]).to(device)/world_size # average
                         dist.barrier()
                         
                         
