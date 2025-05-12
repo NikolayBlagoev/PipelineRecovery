@@ -384,10 +384,10 @@ for itr in range(max_iterations):
                 continue
             err = (prev_gradient_norm[i-1]*stages_tmps[i-1] + prev_gradient_norm[i+1]*stages_tmps[i+1])/(prev_gradient_norm[i-1] + prev_gradient_norm[i+1]) - stages_tmps[i]
             
-            if itr % 20 == 0:
-                error_term[i] = err
-            if error_term[i] != None and itr % 20 != 0:
-                err += error_term[i]
+            # if itr % 20 == 0:
+            #     error_term[i] = None
+            # if error_term[i] != None and itr % 20 != 0:
+            #     err += error_term[i]
             err = torch.abs(err)
             
             print(itr,i, "MAX l2", torch.max(err).item())
@@ -398,8 +398,11 @@ for itr in range(max_iterations):
             print(itr,i, "MEAN inf", torch.mean(err).item())
             tmp1 = stages_tmps[i+1] - stages_tmps[i-1]
             tmp2 = stages_tmps[i] - stages_tmps[i-1]
-            
-            print(itr,i,"DOT",torch.dot(tmp1,tmp2)/torch.dot(tmp2,tmp2))
+            coeff = torch.dot(tmp1,tmp2)/torch.dot(tmp2,tmp2)
+            err = coeff * tmp1 - stages_tmps[i]
+            err = torch.abs(err)
+            print(itr,i, "MAX dot", torch.max(err).item())
+            print(itr,i, "MEAN dot", torch.mean(err).item())
         
         for optim in optimizers:
             optim.optimizer.step()
