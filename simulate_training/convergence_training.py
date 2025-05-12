@@ -375,7 +375,13 @@ for itr in range(max_iterations):
             
             loss.backward()
         print(itr,this_round_loss)
+        if prev != None:
+            for el in prev:
+                el.clear()
         
+        prev = input_output_cahce
+        
+        input_output_cahce = [[] for _ in range(len(stages))]
             
         dist.barrier() # wait for everyone
 
@@ -406,14 +412,7 @@ for itr in range(max_iterations):
             tmp = cat(tmp)
             prev_gradient_norm[i] = prev_gradient_norm[i]*0 + 1.0*abs(torch.linalg.vector_norm(tmp).item())
             
-        if gamma > 0:
-            for i_s in range(1,len(stages)):
-                if i_s == 1:
-                    custom_loss(stages[i_s], stages[i_s+1], None, itr)
-                elif i_s == len(stages) - 1:
-                    custom_loss(stages[i_s], stages[i_s-1], None, itr)
-                else:
-                    custom_loss(stages[i_s], stages[i_s-1], stages[i_s+1], itr)
+        
         for optim in optimizers:
             optim.optimizer.step()
             optim.step(itr) 
