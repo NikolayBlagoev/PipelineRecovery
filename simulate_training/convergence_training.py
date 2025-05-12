@@ -327,10 +327,13 @@ for itr in range(max_iterations):
                             del m1
                         for _ in range(4):
                             optimizers[i].optimizer.zero_grad()
+                            summed = 0
                             for x_prim,y_prim in zip(prev[i-1],prev[i]):
                                 loss = mse_loss(stages[i](x_prim.to(f"cuda:{i//2}")),y_prim.to(f"cuda:{i//2}"))
                                 loss = loss / len(prev[i-1])
+                                summed += loss.item()
                                 loss.backward()
+                            print("ERROR",summed)
                             optimizers[i].optimizer.step()
                             optimizers[i].optimizer.zero_grad()
                         dist.barrier()
