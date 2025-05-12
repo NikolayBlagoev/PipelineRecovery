@@ -102,7 +102,7 @@ if config["architecture"] == "LLaMa":
     for k in range(n_stages):
         # torch.manual_seed(34107)
         stages.append(LLamaStage(dmodel=dmodel,num_heads=num_heads,
-                    device=f"cuda:{1 + k//2}", n_layers=n_layers_per_stage, ctx_size=seq_l,padding_idx=tokenizer.pad_id))
+                    device=f"cuda:{(1 + k)//2}", n_layers=n_layers_per_stage, ctx_size=seq_l,padding_idx=tokenizer.pad_id))
 elif config["architecture"] == "GPT":
     tokenizer = GPTTokenizer()
     torch.manual_seed(34107)
@@ -113,7 +113,7 @@ elif config["architecture"] == "GPT":
     # Make the stages:
     for k in range(n_stages):
         stages.append(GPTStage(dmodel=dmodel,num_heads=num_heads,
-                    device=f"cuda:{1 + k//2}", n_layers=n_layers_per_stage, ctx_size=seq_l,dropout_prob=0))
+                    device=f"cuda:{(1 + k)//2}", n_layers=n_layers_per_stage, ctx_size=seq_l,dropout_prob=0))
 
 # print(len(stages))
 if start_iter > 0:
