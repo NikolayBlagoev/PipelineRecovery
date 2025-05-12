@@ -360,7 +360,7 @@ for itr in range(max_iterations):
         
         prev = input_output_cahce
         
-        input_output_cahce = [[] for _ in range(n_stages)]
+        input_output_cahce = [[] for _ in range(len(stages))]
        
 
         # Sync weights
