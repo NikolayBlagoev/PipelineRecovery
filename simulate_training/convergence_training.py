@@ -234,7 +234,7 @@ for itr in range(max_iterations):
                 # holds embedding and dembedding
                 continue
             can_fail = random.random() > iter_success_probability
-            if can_fail:
+            if can_fail and s != 1 and s != len(stages) - 1:
                 failures[s] = random.randint(0,mb_count-1)
                 failures[s] = 0
         
