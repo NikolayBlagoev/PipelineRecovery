@@ -267,6 +267,35 @@ for itr in range(max_iterations):
                             selector = i - 1
                         s.load_state_dict(deepcopy(stages[selector].state_dict()))
                         optimizers[i] = make_optim(s.parameters(),lr = lr_scale*init_lr,itr=itr)
+                        for _ in range(8):
+                            optimizers[i].optimizer.zero_grad()
+                            summed = 0
+                            for x_prim,y_prim in zip(prev[i-1],prev[i]):
+                                loss = mse_loss(stages[i](x_prim.to(device)),y_prim.to(device))
+                                loss = loss / len(prev[i-1])
+                                summed += loss.item()
+                                loss.backward()
+                            print("ERROR",summed)
+                            optimizers[i].optimizer.step()
+                            
+                            
+                            # optimizers[i].optimizer.step()
+                            # equivalent to 2 * learning rate
+                            optimizers[i].optimizer.zero_grad()
+                        dist.barrier()
+                        tmp = []
+                        for param in s.parameters():
+                            if param.grad == None:
+                                tmp.append(torch.zeros_like(param,device="cpu").view(-1))                      
+                                continue
+                            tmp.append(param.data.view(-1))
+                            
+                        prev_grad = torch.cat(tmp).to("cpu")
+                        dist.all_reduce(prev_grad, op = dist.ReduceOp.SUM)
+                        tmp = torch.split(prev_grad, vls[idx][1])
+                        for pi, param in enumerate(s.parameters()):
+                            param.data = tmp[pi].view(vls[idx][0][pi]).to(device)/world_size # average
+                        dist.barrier()
                     elif checkpoint_mode == "ours-zero":
                         if i == 1:
                             selector = i + 1
@@ -280,12 +309,70 @@ for itr in range(max_iterations):
                     
                         optimizers[i] = make_optim(s.parameters(),lr = lr_scale*init_lr,itr=itr)
                         del m1
+                        for _ in range(8):
+                            optimizers[i].optimizer.zero_grad()
+                            summed = 0
+                            for x_prim,y_prim in zip(prev[i-1],prev[i]):
+                                loss = mse_loss(stages[i](x_prim.to(device)),y_prim.to(device))
+                                loss = loss / len(prev[i-1])
+                                summed += loss.item()
+                                loss.backward()
+                            print("ERROR",summed)
+                            optimizers[i].optimizer.step()
+                            
+                            
+                            # optimizers[i].optimizer.step()
+                            # equivalent to 2 * learning rate
+                            optimizers[i].optimizer.zero_grad()
+                        dist.barrier()
+                        tmp = []
+                        for param in s.parameters():
+                            if param.grad == None:
+                                tmp.append(torch.zeros_like(param,device="cpu").view(-1))                      
+                                continue
+                            tmp.append(param.data.view(-1))
+                            
+                        prev_grad = torch.cat(tmp).to("cpu")
+                        dist.all_reduce(prev_grad, op = dist.ReduceOp.SUM)
+                        tmp = torch.split(prev_grad, vls[idx][1])
+                        for pi, param in enumerate(s.parameters()):
+                            param.data = tmp[pi].view(vls[idx][0][pi]).to(device)/world_size # average
+                        dist.barrier()
                     elif checkpoint_mode == "ours-random":
                         
                         stages[i] = LLamaStage(dmodel=dmodel,num_heads=num_heads,
                                 device=device, n_layers=n_layers_per_stage, ctx_size=seq_l,padding_idx=tokenizer.pad_id)
                         s = stages[i]
                         optimizers[i] = make_optim(s.parameters(),lr = lr_scale*init_lr,itr=itr)
+                        for _ in range(8):
+                            optimizers[i].optimizer.zero_grad()
+                            summed = 0
+                            for x_prim,y_prim in zip(prev[i-1],prev[i]):
+                                loss = mse_loss(stages[i](x_prim.to(device)),y_prim.to(device))
+                                loss = loss / len(prev[i-1])
+                                summed += loss.item()
+                                loss.backward()
+                            print("ERROR",summed)
+                            optimizers[i].optimizer.step()
+                            
+                            
+                            # optimizers[i].optimizer.step()
+                            # equivalent to 2 * learning rate
+                            optimizers[i].optimizer.zero_grad()
+                        dist.barrier()
+                        tmp = []
+                        for param in s.parameters():
+                            if param.grad == None:
+                                tmp.append(torch.zeros_like(param,device="cpu").view(-1))                      
+                                continue
+                            tmp.append(param.data.view(-1))
+                            
+                        prev_grad = torch.cat(tmp).to("cpu")
+                        dist.all_reduce(prev_grad, op = dist.ReduceOp.SUM)
+                        tmp = torch.split(prev_grad, vls[idx][1])
+                        for pi, param in enumerate(s.parameters()):
+                            param.data = tmp[pi].view(vls[idx][0][pi]).to(device)/world_size # average
+                        dist.barrier()
                             
                     elif checkpoint_mode == "ours-grad-avg":
                         if i == len(stages)-1:
