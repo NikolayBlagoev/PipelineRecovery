@@ -17,6 +17,7 @@ import torch
 import torch.distributed as dist
 import traceback
 import os
+from torch.nn.functional import mse_loss
 import json
 from time import time
 from math import sqrt
@@ -203,6 +204,8 @@ error_term = [None for _ in range(n_stages)]
 # iter_success_probability = ((100 - h_failure_probability)/100)**(total_time / 3600)
 iter_success_probability = 1.0 - config[str(h_failure_probability)]
 print("Iteration failure probability ", 1 - iter_success_probability)
+input_output_cahce = [[] for _ in range(n_stages)]
+prev = None
 for itr in range(max_iterations):
     try:
         for optim in optimizers:
@@ -278,15 +281,15 @@ for itr in range(max_iterations):
                         if i == len(stages)-1:
                             s.load_state_dict(deepcopy(stages[i-1].state_dict()))
                             optimizers[i] = make_optim(s.parameters(),lr = lr_scale*init_lr,itr=itr)
-                            for optim in optimizers:
-                                optim.optimizer.zero_grad()
+                            # for optim in optimizers:
+                            #     optim.optimizer.zero_grad()
                             
                             
                         elif i == 1: 
                             s.load_state_dict(deepcopy(stages[i+1].state_dict()))
                             optimizers[i] = make_optim(s.parameters(),lr = lr_scale*init_lr,itr=itr)
-                            for optim in optimizers:
-                                optim.optimizer.zero_grad()
+                            # for optim in optimizers:
+                            #     optim.optimizer.zero_grad()
                             
                             
                         else:
@@ -307,12 +310,19 @@ for itr in range(max_iterations):
                             s = stages[i]
                             
                             optimizers[i] = make_optim(s.parameters(),lr = lr_scale*init_lr,itr=itr)
-                            for optim in optimizers:
-                                optim.optimizer.zero_grad()
+                            # for optim in optimizers:
+                            #     optim.optimizer.zero_grad()
                             
                             del m3
                             del m2
                             del m1
+                        
+                        for x_prim,y_prim in zip(prev[i-1],prev[i]):
+                            loss = mse_loss(stages[i](x_prim.to(f"cuda:{i//2}")),y_prim.to(f"cuda:{i//2}"))
+                            loss = loss / len(prev[i-1])
+                            loss.backward()
+                        optimizers[i].optimizer.step()
+                        optimizers[i].optimizer.zero_grad()
                     
                     elif checkpoint_mode == "one":
                         s.load_state_dict(deepcopy(checkpoints[i]))
@@ -332,6 +342,7 @@ for itr in range(max_iterations):
                 else:
                     x = x.to(f"cuda:{i//2}")
                     x = s(x)
+                input_output_cahce[i].append(x.detach().to("cpu"))
             x = x.to("cuda:0")
             x = stages[0].forward_end(x)
             
@@ -343,8 +354,12 @@ for itr in range(max_iterations):
             
             loss.backward()
         print(itr,this_round_loss)
+        for el in prev:
+            el.clear()
         
-            
+        prev = input_output_cahce
+        
+        input_output_cahce = [[] for _ in range(n_stages)]
        
 
         # Sync weights
@@ -379,32 +394,32 @@ for itr in range(max_iterations):
             prev_gradient_norm[i] = prev_gradient_norm[i]*0 + 1.0*abs(torch.dot(tmp,tmp).item())
             prev_gradient_norm_inf[i] = prev_gradient_norm[i]*0 + 1.0*abs(torch.linalg.vector_norm(tmp,ord=float("inf")).item())
          
-        for i,s in enumerate(stages):
-            if i < 2 or i == len(stages) - 1:
-                continue
-            err = (prev_gradient_norm[i-1]*stages_tmps[i-1] + prev_gradient_norm[i+1]*stages_tmps[i+1])/(prev_gradient_norm[i-1] + prev_gradient_norm[i+1]) - stages_tmps[i]
+        # for i,s in enumerate(stages):
+        #     if i < 2 or i == len(stages) - 1:
+        #         continue
+        #     err = (prev_gradient_norm[i-1]*stages_tmps[i-1] + prev_gradient_norm[i+1]*stages_tmps[i+1])/(prev_gradient_norm[i-1] + prev_gradient_norm[i+1]) - stages_tmps[i]
             
-            # if itr % 20 == 0:
-            #     error_term[i] = None
-            # if error_term[i] != None and itr % 20 != 0:
-            #     err += error_term[i]
-            err = torch.abs(err)
+        #     # if itr % 20 == 0:
+        #     #     error_term[i] = None
+        #     # if error_term[i] != None and itr % 20 != 0:
+        #     #     err += error_term[i]
+        #     err = torch.abs(err)
             
-            print(itr,i, "MAX l2", torch.max(err).item())
-            print(itr,i, "MEAN l2", torch.mean(err).item())
-            err = (prev_gradient_norm_inf[i-1]*stages_tmps[i-1] + prev_gradient_norm_inf[i+1]*stages_tmps[i+1])/(prev_gradient_norm_inf[i-1] + prev_gradient_norm_inf[i+1]) - stages_tmps[i]
-            err = torch.abs(err)
-            print(itr,i, "MAX inf", torch.max(err).item())
-            print(itr,i, "MEAN inf", torch.mean(err).item())
-            tmp1 = stages_tmps[i+1] - stages_tmps[i-1]
-            print(itr, i+1, i-1, torch.sum(torch.abs(tmp1)))
-            tmp2 = stages_tmps[i] - stages_tmps[i-1]
-            coeff = torch.dot(tmp1,tmp2)/(0.0001 + torch.dot(tmp1,tmp1))
+        #     print(itr,i, "MAX l2", torch.max(err).item())
+        #     print(itr,i, "MEAN l2", torch.mean(err).item())
+        #     err = (prev_gradient_norm_inf[i-1]*stages_tmps[i-1] + prev_gradient_norm_inf[i+1]*stages_tmps[i+1])/(prev_gradient_norm_inf[i-1] + prev_gradient_norm_inf[i+1]) - stages_tmps[i]
+        #     err = torch.abs(err)
+        #     print(itr,i, "MAX inf", torch.max(err).item())
+        #     print(itr,i, "MEAN inf", torch.mean(err).item())
+        #     tmp1 = stages_tmps[i+1] - stages_tmps[i-1]
+        #     print(itr, i+1, i-1, torch.sum(torch.abs(tmp1)))
+        #     tmp2 = stages_tmps[i] - stages_tmps[i-1]
+        #     coeff = torch.dot(tmp1,tmp2)/(0.0001 + torch.dot(tmp1,tmp1))
             
-            err = coeff * tmp1 + stages_tmps[i-1] - stages_tmps[i]
-            err = torch.abs(err)
-            print(itr,i, "MAX dot", torch.max(err).item())
-            print(itr,i, "MEAN dot", torch.mean(err).item())
+        #     err = coeff * tmp1 + stages_tmps[i-1] - stages_tmps[i]
+        #     err = torch.abs(err)
+        #     print(itr,i, "MAX dot", torch.max(err).item())
+        #     print(itr,i, "MEAN dot", torch.mean(err).item())
         
         for optim in optimizers:
             optim.optimizer.step()
