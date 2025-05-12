@@ -397,8 +397,9 @@ for itr in range(max_iterations):
             print(itr,i, "MAX inf", torch.max(err).item())
             print(itr,i, "MEAN inf", torch.mean(err).item())
             tmp1 = stages_tmps[i+1] - stages_tmps[i-1]
+            print(itr, i+1, i-1, torch.sum(torch.abs(tmp1)))
             tmp2 = stages_tmps[i] - stages_tmps[i-1]
-            coeff = torch.dot(tmp1,tmp2)/torch.dot(tmp1,tmp1)
+            coeff = torch.dot(tmp1,tmp2)/(0.0001 + torch.dot(tmp1,tmp1))
             
             err = coeff * tmp1 + stages_tmps[i-1] - stages_tmps[i]
             err = torch.abs(err)
