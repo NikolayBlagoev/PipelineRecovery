@@ -21,13 +21,10 @@ import json
 from time import time
 from math import sqrt
 import math
-rank = int(argv[3])
-os.environ["MASTER_ADDR"] = "localhost"
-world_size = int(argv[4])
-os.environ["MASTER_PORT"] = "29500"
-h_failure_probability = int(argv[5])
-dist.init_process_group("gloo", rank=rank, world_size=world_size)
-start_iter = int(argv[7]) if len(argv) > 7 else 0
+
+h_failure_probability = int(argv[2])
+
+start_iter = int(argv[3]) if len(argv) > 7 else 0
 with open(argv[6],"r") as fd:
     config = json.load(fd)
 checkpoint_mode = argv[1]
@@ -66,8 +63,6 @@ mb_count = config["mb_count"]
 validation_amount = config["validation"]
 max_iterations = config["max_iterations"] 
 
-
-device = argv[2]
 num_warmup_steps = 500
 num_training_steps = max_iterations
 max_iterations = max_iterations - start_iter
@@ -91,7 +86,7 @@ def lr_lambda(current_step: int) -> float:
     
 # make the tokenizer
 def make_optim(params,lr,itr = 0):
-    return LambdaLR(AdamW(params, lr, betas=(0.9, 0.999), weight_decay=0.01),lr_lambda)
+    return LambdaLR(AdamW(params, lr, betas=(0.9, 0.9), weight_decay=0.01),lr_lambda)
 
 world_data_size = world_size
 rank_data_size = rank
@@ -99,16 +94,16 @@ if config["architecture"] == "LLaMa":
     tokenizer = SPTokenizer()
     torch.manual_seed(34107)
     s0 = LLamaFirstStage(tokenizer.vocab_size,dmodel=dmodel,num_heads=num_heads,
-                    device=device, n_layers=0, ctx_size=seq_l,padding_idx=tokenizer.pad_id,de_embed=True)
+                    device="cuda:0", n_layers=0, ctx_size=seq_l,padding_idx=tokenizer.pad_id,de_embed=True)
     
     stages = [s0]
 
     # Make the stages:
     
-    for _ in range(n_stages):
+    for k in range(n_stages):
         # torch.manual_seed(34107)
         stages.append(LLamaStage(dmodel=dmodel,num_heads=num_heads,
-                    device=device, n_layers=n_layers_per_stage, ctx_size=seq_l,padding_idx=tokenizer.pad_id))
+                    device=f"cuda:{1 + k//2}", n_layers=n_layers_per_stage, ctx_size=seq_l,padding_idx=tokenizer.pad_id))
 elif config["architecture"] == "GPT":
     tokenizer = GPTTokenizer()
     torch.manual_seed(34107)
@@ -117,14 +112,14 @@ elif config["architecture"] == "GPT":
     stages = [s0]
 
     # Make the stages:
-    for _ in range(n_stages):
+    for k in range(n_stages):
         stages.append(GPTStage(dmodel=dmodel,num_heads=num_heads,
-                    device=device, n_layers=n_layers_per_stage, ctx_size=seq_l,dropout_prob=0))
+                    device=f"cuda:{1 + k//2}", n_layers=n_layers_per_stage, ctx_size=seq_l,dropout_prob=0))
 
 # print(len(stages))
 if start_iter > 0:
     for i,s in enumerate(stages):
-        s.load_state_dict(torch.load(f"mdl_{i}.pth",map_location=device))
+        s.load_state_dict(torch.load(f"mdl_{i}.pth",map_location=f"cuda:{i//2}"))
 
 optimizers = []
 optimizer_checkpoints = []
@@ -133,11 +128,11 @@ for i in range(len(stages)):
 
 if start_iter > 0:
     for i in range(len(stages)):
-        optimizers[i].load_state_dict(torch.load(f"optim_{i}.pth",map_location=device))
+        optimizers[i].load_state_dict(torch.load(f"optim_{i}.pth",map_location=f"cuda:{i//2}"))
 means = [0 for _ in range(len(stages))]
 stds = [1 for _ in range(len(stages))]
 prev_gradient_norm = [1 for _ in range(len(stages))]
-
+prev_gradient_norm_inf = [1 for _ in range(len(stages))]
 if config["dataset"] == "OpenWebText":
     ds = OpenWebText(tokenizer,batch_size=batch_size, seq_l=seq_l,skip=start_iter*(world_size*mb_count) + validation_amount*2)
     validation_dataset = OpenWebText(tokenizer,batch_size=16, seq_l=seq_l)
@@ -305,10 +300,10 @@ for itr in range(max_iterations):
                             beta = abs(prev_gradient_norm[i-1]) + 0.0001
                             if config["architecture"] == "LLaMa":
                                 stages[i] = LLamaStage(dmodel=dmodel,num_heads=num_heads,
-                                    device=device, n_layers=n_layers_per_stage, ctx_size=seq_l,padding_idx=tokenizer.pad_id)
+                                    device=f"cuda:{i//2}", n_layers=n_layers_per_stage, ctx_size=seq_l,padding_idx=tokenizer.pad_id)
                             else:
                                 stages[i] = GPTStage(dmodel=dmodel,num_heads=num_heads,
-                                    device=device, n_layers=n_layers_per_stage, ctx_size=seq_l,dropout_prob=0)
+                                    device=f"cuda:{i//2}", n_layers=n_layers_per_stage, ctx_size=seq_l,dropout_prob=0)
                             m3 = stages[i].state_dict()
                             for key in m1:
                                 m3[key] = (alpha*m1[key] + beta*m2[key]) / (alpha + beta)
@@ -339,7 +334,9 @@ for itr in range(max_iterations):
                 if i == 0:
                     x = s.embed(x)
                 else:
+                    x = x.to(f"cuda:{i//2}")
                     x = s(x)
+            x = x.to("cuda:0")
             x = stages[0].forward_end(x)
             
             loss = causalLLMLoss(x,target,tokenizer.vocab_size)
@@ -352,43 +349,55 @@ for itr in range(max_iterations):
         print(itr,this_round_loss)
         
             
-        dist.barrier() # wait for everyone
+       
 
         # Sync weights
-        for idx,s in enumerate(stages):
-            tmp = []
-            for param in s.parameters():
-                if param.grad == None:
-                    tmp.append(torch.zeros_like(param,device="cpu").view(-1))                      
-                    continue
-                tmp.append(param.grad.view(-1))
-                param.grad = None
-            prev_grad = torch.cat(tmp).to("cpu")
-            dist.all_reduce(prev_grad, op = dist.ReduceOp.SUM)
-            tmp = torch.split(prev_grad, vls[idx][1])
-            for i, param in enumerate(s.parameters()):
-                param.grad = tmp[i].view(vls[idx][0][i]).to(device)/world_size # average
-        
+        # for idx,s in enumerate(stages):
+        #     tmp = []
+        #     for param in s.parameters():
+        #         if param.grad == None:
+        #             tmp.append(torch.zeros_like(param,device="cpu").view(-1))                      
+        #             continue
+        #         tmp.append(param.grad.view(-1))
+        #         param.grad = None
+        #     prev_grad = torch.cat(tmp).to("cpu")
+        #     dist.all_reduce(prev_grad, op = dist.ReduceOp.SUM)
+        #     tmp = torch.split(prev_grad, vls[idx][1])
+        #     for i, param in enumerate(s.parameters()):
+        #         param.grad = tmp[i].view(vls[idx][0][i]).to(device)/world_size # average
+        stages_tmps = []
         for i,s in enumerate(stages):
             tmp = []
+            tmp_2 = []
             torch.nn.utils.clip_grad_norm_(s.parameters(),max_norm=1.0)
             for p in s.parameters():
                 if p.grad == None:
                     tmp.append(zeros_like(p.data).view(-1))   
+                    tmp2.append(zeros_like(p.data).view(-1))
                     continue
                 tmp.append(p.grad.view(-1))
-                
-            tmp = cat(tmp)
-            prev_gradient_norm[i] = prev_gradient_norm[i]*0 + 1.0*abs(torch.linalg.vector_norm(tmp).item())
+                tmp2.append(p.data.view(-1))
             
-        if gamma > 0:
-            for i_s in range(1,len(stages)):
-                if i_s == 1:
-                    custom_loss(stages[i_s], stages[i_s+1], None, itr)
-                elif i_s == len(stages) - 1:
-                    custom_loss(stages[i_s], stages[i_s-1], None, itr)
-                else:
-                    custom_loss(stages[i_s], stages[i_s-1], stages[i_s+1], itr)
+            tmp = cat(tmp)
+            stages_tmps.append(cat(tmp2).to("cpu"))
+            prev_gradient_norm[i] = prev_gradient_norm[i]*0 + 1.0*abs(torch.dot(tmp,tmp).item())
+            prev_gradient_norm_inf[i] = prev_gradient_norm[i]*0 + 1.0*abs(torch.linalg.vector_norm(tmp,ord="inf").item())
+        for i,s in enumerate(stages):
+            if i < 2 or i == len(stages) - 1:
+                continue
+            err = (prev_gradient_norm[i-1]*stages_tmps[i-1] + prev_gradient_norm[i+1]*stages_tmps[i+1])/(prev_gradient_norm[i-1] + prev_gradient_norm[i+1]) - stages_tmps[i]
+            err = torch.abs(err)
+            print(itr,i, "MAX l2", torch.max(err).item())
+            print(itr,i, "MEAN l2", torch.mean(err).item())
+            err = (prev_gradient_norm_inf[i-1]*stages_tmps[i-1] + prev_gradient_norm_inf[i+1]*stages_tmps[i+1])/(prev_gradient_norm_inf[i-1] + prev_gradient_norm_inf[i+1]) - stages_tmps[i]
+            err = torch.abs(err)
+            print(itr,i, "MAX inf", torch.max(err).item())
+            print(itr,i, "MEAN inf", torch.mean(err).item())
+            tmp1 = stages_tmps[i+1] - stages_tmps[i-1]
+            tmp2 = stages_tmps[i] - stages_tmps[i-1]
+            
+            print(itr,i,"DOT",torch.dot(tmp1,tmp2)/torch.dot(tmp2,tmp2))
+        
         for optim in optimizers:
             optim.optimizer.step()
             optim.step(itr) 
@@ -424,7 +433,7 @@ for itr in range(max_iterations):
             print("VALIDATION LOSS",itr,sum(perplxities)/len(perplxities))
             print("NORMAL LOSS",itr,sum(normal_loss)/len(normal_loss))
                 
-        dist.barrier()
+        # dist.barrier()
         print("time:",time()-t1)
         
         cuda.empty_cache()

@@ -127,9 +127,9 @@ MAX_EL = 40000
 validate = True
 show_failures = False
 smooth = 1
-val_loss = 2.9
+val_loss = 2.8
 tmp = 0
-# tmp = simulate_failures("results/small_gradavg_16/out0.txt","results/small_baseline_16/out0.txt",val_loss=val_loss,checkpoint_freq=50, label="Checkpointing")
+tmp = simulate_failures("results/send_0/out0.txt","results/results_new/medium_16/out0.txt",val_loss=val_loss,checkpoint_freq=50, label="Checkpointing")
 # tmp = max(tmp,simulate_failures("results/medium_gradavg_16/out0.txt","results/medium_baseline_16/out0.txt",val_loss=val_loss,checkpoint_freq=50, label="Checkpointing 50"))
 # tmp = max(tmp,simulate_failures("results/medium_gradavg_16/out0.txt","results/medium_baseline_16/out0.txt",val_loss=val_loss,checkpoint_freq=25, label="Checkpointing 25"))
 # plot_fl("results/medium_naive_16/out0.txt", "Naive copy 16%",max_el=MAX_EL,validation=validate, show_failures=show_failures, smooth = smooth)
@@ -137,10 +137,10 @@ tmp = 0
 # plot_fl("results/medium_gradavg_33/out0.txt", "Ours 33%",validation=validate, show_failures=show_failures, smooth = smooth)
 # plot_fl("results/small_gradavg_16/out0.txt", "Ours 16%",validation=validate, show_failures=show_failures, smooth = smooth, val_loss=val_loss)
 # plot_fl("results/medium_gradavg_33/out0.txt", "Ours 33%",validation=validate, show_failures=show_failures, smooth = smooth, val_loss=val_loss)
-plot_fl("results/medium_random_16/out0.txt", "Random",validation=validate, show_failures=show_failures, smooth = smooth, val_loss=val_loss)
-plot_fl("results/medium_zero_16/out0.txt", "Zero",validation=validate, show_failures=show_failures, smooth = smooth, val_loss=val_loss)
-plot_fl("results/medium_naive_16/out0.txt", "Copy",validation=validate, show_failures=show_failures, smooth = smooth, val_loss=val_loss)
-plot_fl("results/medium_gradavg_16/out0.txt", "Weighted Average",validation=validate, show_failures=show_failures, smooth = smooth, val_loss=val_loss)
+plot_fl("results/results_new/medium_10/out0.txt", "Ours",validation=validate, show_failures=show_failures, smooth = smooth, val_loss=val_loss-0.1)
+plot_fl("results/send_0/out0.txt", "Baseline",validation=validate, show_failures=show_failures, smooth = smooth, val_loss=val_loss)
+# plot_fl("results/medium_naive_16/out0.txt", "Copy",validation=validate, show_failures=show_failures, smooth = smooth, val_loss=val_loss)
+# plot_fl("results/medium_gradavg_16/out0.txt", "Weighted Average",validation=validate, show_failures=show_failures, smooth = smooth, val_loss=val_loss)
 
 # plot_fl("results/medium_gradavg_10/out0.txt", "Ours 10%",validation=validate, show_failures=show_failures, smooth = smooth, val_loss=val_loss)
 # plot_fl("results/medium_baseline_16/out0.txt", "No fault",validation=validate, show_failures=show_failures, smooth = smooth, val_loss=val_loss)
