@@ -182,10 +182,11 @@ for _ in range(mb_count):
             if i == 0:
                 x = s.embed(x)
             else:
+                print(i,i//2)
                 x = x.to(f"cuda:{i//2}")
                 x = s(x)
                 
-                    
+        x = x.to("cuda:0")   
         x = stages[0].forward_end(x)
 t1 = (time() - t1)
 # 100 MB/s or ~800Mb/s
@@ -421,6 +422,7 @@ for itr in range(max_iterations):
                         else:
                             x = x.to(f"cuda:{i//2}")
                             x = s(x)
+                    x = x.to("cuda:0")
                     x = stages[0].forward_end(x)
                     loss = perplexityLoss(x,target)
                     perplxities.append(loss.item())
