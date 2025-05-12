@@ -6,6 +6,7 @@ from simplellm.utils import State
 from simplellm.losses import causalLLMLoss, perplexityLoss # our loss
 from copy import deepcopy
 from sys import argv
+from torch.nn.functional import mse_loss
 import random
 random.seed(42)
 State.set_seed(42)
