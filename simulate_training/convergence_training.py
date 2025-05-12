@@ -369,7 +369,9 @@ for itr in range(max_iterations):
                 if i == 0:
                     x = s.embed(x)
                 else:
+                    
                     x = s(x)
+                input_output_cahce[i].append(x.detach().to("cpu"))
             x = stages[0].forward_end(x)
             
             loss = causalLLMLoss(x,target,tokenizer.vocab_size)
