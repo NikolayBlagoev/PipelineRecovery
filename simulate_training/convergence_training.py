@@ -461,38 +461,38 @@ for itr in range(max_iterations):
                             del m3
                             del m2
                             del m1
-                        for _ in range(50):
-                            optimizers[i].optimizer.zero_grad()
-                            summed = 0
-                            for x_prim,y_prim in zip(prev[i-1],prev[i]):
-                                loss = mse_loss(stages[i](x_prim.to(device)),y_prim.to(device))
-                                loss = loss / len(prev[i-1])
-                                summed += loss.item()
-                                loss.backward()
-                            print("ERROR",summed)
-                            optimizers[i].optimizer.step()
-                            if summed < 0.5:
-                                break
+                            for _ in range(50):
+                                optimizers[i].optimizer.zero_grad()
+                                summed = 0
+                                for x_prim,y_prim in zip(prev[i-1],prev[i]):
+                                    loss = mse_loss(stages[i](x_prim.to(device)),y_prim.to(device))
+                                    loss = loss / len(prev[i-1])
+                                    summed += loss.item()
+                                    loss.backward()
+                                print("ERROR",summed)
+                                optimizers[i].optimizer.step()
+                                if summed < 0.5:
+                                    break
+                                
+                                
+                                # optimizers[i].optimizer.step()
+                                # equivalent to 2 * learning rate
+                                optimizers[i].optimizer.zero_grad()
+                            dist.barrier()
+                            tmp = []
+                            for param in s.parameters():
+                                if param.grad == None:
+                                    tmp.append(torch.zeros_like(param,device="cpu").view(-1))                      
+                                    continue
+                                tmp.append(param.data.view(-1))
+                                
+                            prev_grad = torch.cat(tmp).to("cpu")
+                            dist.all_reduce(prev_grad, op = dist.ReduceOp.SUM)
+                            tmp = torch.split(prev_grad, vls[idx][1])
+                            for pi, param in enumerate(s.parameters()):
+                                param.data = tmp[pi].view(vls[idx][0][pi]).to(device)/world_size # average
+                            dist.barrier()
                             
-                            
-                            # optimizers[i].optimizer.step()
-                            # equivalent to 2 * learning rate
-                            optimizers[i].optimizer.zero_grad()
-                        dist.barrier()
-                        tmp = []
-                        for param in s.parameters():
-                            if param.grad == None:
-                                tmp.append(torch.zeros_like(param,device="cpu").view(-1))                      
-                                continue
-                            tmp.append(param.data.view(-1))
-                            
-                        prev_grad = torch.cat(tmp).to("cpu")
-                        dist.all_reduce(prev_grad, op = dist.ReduceOp.SUM)
-                        tmp = torch.split(prev_grad, vls[idx][1])
-                        for pi, param in enumerate(s.parameters()):
-                            param.data = tmp[pi].view(vls[idx][0][pi]).to(device)/world_size # average
-                        dist.barrier()
-                        
                         
                     
                     elif checkpoint_mode == "one":
