@@ -343,8 +343,8 @@ for itr in range(max_iterations):
                         dist.all_reduce(prev_grad, op = dist.ReduceOp.SUM)
                         tmp = torch.split(prev_grad, vls[idx][1])
                         for i, param in enumerate(s.parameters()):
-                            param.data = tmp[i].view(vls[idx][0][i]).to(device) / world_size # average
-                        
+                            param.data = tmp[i].view(vls[idx][0][i]).to(device)/world_size # average
+                        dist.barrier()
                         
                         
                     
@@ -392,7 +392,7 @@ for itr in range(max_iterations):
             dist.all_reduce(prev_grad, op = dist.ReduceOp.SUM)
             tmp = torch.split(prev_grad, vls[idx][1])
             for i, param in enumerate(s.parameters()):
-                param.data = tmp[i].view(vls[idx][0][i]).to(device)/world_size # average
+                param.grad = tmp[i].view(vls[idx][0][i]).to(device)/world_size # average
         
         for i,s in enumerate(stages):
             tmp = []
