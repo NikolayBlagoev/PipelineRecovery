@@ -26,7 +26,7 @@ os.environ["MASTER_ADDR"] = "localhost"
 world_size = int(argv[4])
 os.environ["MASTER_PORT"] = "29500"
 h_failure_probability = int(argv[5])
-dist.init_process_group("nccl", rank=rank, world_size=world_size)
+dist.init_process_group("gloo", rank=rank, world_size=world_size)
 start_iter = int(argv[7]) if len(argv) > 7 else 0
 with open(argv[6],"r") as fd:
     config = json.load(fd)
@@ -339,11 +339,11 @@ for itr in range(max_iterations):
                                 continue
                             tmp.append(param.data.view(-1))
                             
-                        prev_grad = torch.cat(tmp)
-                        dist.all_reduce(prev_grad, op = dist.ReduceOp.AVG)
+                        prev_grad = torch.cat(tmp).to("cpu")
+                        dist.all_reduce(prev_grad, op = dist.ReduceOp.SUM)
                         tmp = torch.split(prev_grad, vls[idx][1])
                         for i, param in enumerate(s.parameters()):
-                            param.data = tmp[i].view(vls[idx][0][i]).to(device) # average
+                            param.data = tmp[i].view(vls[idx][0][i]).to(device) / world_size # average
                         
                         
                         
@@ -388,11 +388,11 @@ for itr in range(max_iterations):
                     continue
                 tmp.append(param.grad.view(-1))
                 param.grad = None
-            prev_grad = torch.cat(tmp)
-            dist.all_reduce(prev_grad, op = dist.ReduceOp.AVG)
+            prev_grad = torch.cat(tmp).to("cpu")
+            dist.all_reduce(prev_grad, op = dist.ReduceOp.SUM)
             tmp = torch.split(prev_grad, vls[idx][1])
             for i, param in enumerate(s.parameters()):
-                param.data = tmp[i].view(vls[idx][0][i]).to(device) # average
+                param.data = tmp[i].view(vls[idx][0][i]).to(device)/world_size # average
         
         for i,s in enumerate(stages):
             tmp = []
