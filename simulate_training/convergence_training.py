@@ -24,8 +24,8 @@ import math
 
 h_failure_probability = int(argv[2])
 
-start_iter = int(argv[3]) if len(argv) > 7 else 0
-with open(argv[6],"r") as fd:
+start_iter = int(argv[4]) if len(argv) > 4 else 0
+with open(argv[3],"r") as fd:
     config = json.load(fd)
 checkpoint_mode = argv[1]
 gamma = 1e-3 if "regularize" in checkpoint_mode else 0
