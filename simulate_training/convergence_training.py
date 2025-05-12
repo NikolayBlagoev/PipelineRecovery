@@ -199,7 +199,7 @@ total_time *=  1 # synchronisation
 print("total time per iteration ", total_time)
 iterations_per_h = 60*60 / total_time 
 print(60*60 / total_time, 100 - h_failure_probability)
-error_term = None
+error_term = [None for _ in range(n_stages)]
 # iter_success_probability = ((100 - h_failure_probability)/100)**(total_time / 3600)
 iter_success_probability = 1.0 - config[str(h_failure_probability)]
 print("Iteration failure probability ", 1 - iter_success_probability)
@@ -383,10 +383,11 @@ for itr in range(max_iterations):
             if i < 2 or i == len(stages) - 1:
                 continue
             err = (prev_gradient_norm[i-1]*stages_tmps[i-1] + prev_gradient_norm[i+1]*stages_tmps[i+1])/(prev_gradient_norm[i-1] + prev_gradient_norm[i+1]) - stages_tmps[i]
-            if error_term != None:
-                err += error_term
+            
             if itr % 20 == 0:
-                error_term = err
+                error_term[i] = err
+            if error_term[i] != None and itr % 20 != 0:
+                err += error_term[i]
             err = torch.abs(err)
             
             print(itr,i, "MAX l2", torch.max(err).item())
