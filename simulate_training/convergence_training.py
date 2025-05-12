@@ -337,10 +337,9 @@ for itr in range(max_iterations):
                             print("ERROR",summed)
                             optimizers[i].optimizer.step()
                             optimizers[i].optimizer.step()
-                            optimizers[i].optimizer.step()
-                            optimizers[i].optimizer.step()
-                            optimizers[i].optimizer.step()
-                            # equivalent to 5 * learning rate
+                            
+                            # optimizers[i].optimizer.step()
+                            # equivalent to 2 * learning rate
                             optimizers[i].optimizer.zero_grad()
                         dist.barrier()
                         tmp = []
