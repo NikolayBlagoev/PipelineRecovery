@@ -398,7 +398,7 @@ for itr in range(max_iterations):
             optim.optimizer.step()
             optim.step(itr) 
             
-        if itr % 100 == 0 and rank == 0:
+        if itr % 100 == 0 :
             print("SAVING ITERATION",itr)
             for i,s in enumerate(stages):
                 torch.save(s.state_dict(), f"mdl_{i}.pth") 
