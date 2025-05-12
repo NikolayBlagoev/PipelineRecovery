@@ -410,6 +410,7 @@ for itr in range(max_iterations):
                             s = stages[i]
                             
                             optimizers[i] = make_optim(s.parameters(),lr = lr_scale*init_lr,itr=itr)
+                            optimizers[i].optimizer.load_state_dict(deepcopy(optimizers[2],optim.state_dict()))
                             # for optim in optimizers:
                             #     optim.optimizer.zero_grad()
                             
@@ -434,6 +435,7 @@ for itr in range(max_iterations):
                             s = stages[i]
                             
                             optimizers[i] = make_optim(s.parameters(),lr = lr_scale*init_lr,itr=itr)
+                             optimizers[i].optimizer.load_state_dict(deepcopy(optimizers[1],optim.state_dict()))
                             # for optim in optimizers:
                             #     optim.optimizer.zero_grad()
                             
