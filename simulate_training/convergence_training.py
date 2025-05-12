@@ -395,8 +395,8 @@ for itr in range(max_iterations):
                         elif i == 1: 
                             m1 = deepcopy(stages[2].state_dict())
                             m2 = deepcopy(stages[3].state_dict())
-                            alpha = 4*abs(prev_gradient_norm[2]) + 0.0001
-                            beta = abs(prev_gradient_norm[3]) + 0.0001
+                            alpha = 1
+                            beta = 0
                             if config["architecture"] == "LLaMa":
                                 stages[i] = LLamaStage(dmodel=dmodel,num_heads=num_heads,
                                     device=device, n_layers=n_layers_per_stage, ctx_size=seq_l,padding_idx=tokenizer.pad_id)
@@ -419,8 +419,8 @@ for itr in range(max_iterations):
                         elif i == 2: 
                             m1 = deepcopy(stages[1].state_dict())
                             m2 = deepcopy(stages[3].state_dict())
-                            alpha = 4*abs(prev_gradient_norm[1]) + 0.0001
-                            beta = abs(prev_gradient_norm[3]) + 0.0001
+                            alpha = 1
+                            beta = 0
                             if config["architecture"] == "LLaMa":
                                 stages[i] = LLamaStage(dmodel=dmodel,num_heads=num_heads,
                                     device=device, n_layers=n_layers_per_stage, ctx_size=seq_l,padding_idx=tokenizer.pad_id)
@@ -465,7 +465,7 @@ for itr in range(max_iterations):
                             del m3
                             del m2
                             del m1
-                        for _ in range(50):
+                        for _ in range(8):
                             optimizers[i].optimizer.zero_grad()
                             summed = 0
                             for x_prim,y_prim in zip(prev[i-1],prev[i]):
