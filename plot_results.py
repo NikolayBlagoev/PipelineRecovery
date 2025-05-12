@@ -137,7 +137,7 @@ tmp = simulate_failures("results/send_0/out0.txt","results/results_new/medium_16
 # plot_fl("results/medium_gradavg_33/out0.txt", "Ours 33%",validation=validate, show_failures=show_failures, smooth = smooth)
 # plot_fl("results/small_gradavg_16/out0.txt", "Ours 16%",validation=validate, show_failures=show_failures, smooth = smooth, val_loss=val_loss)
 # plot_fl("results/medium_gradavg_33/out0.txt", "Ours 33%",validation=validate, show_failures=show_failures, smooth = smooth, val_loss=val_loss)
-plot_fl("results/results_new/medium_10/out0.txt", "Ours",validation=validate, show_failures=show_failures, smooth = smooth, val_loss=val_loss-0.1)
+plot_fl("results/results_new/medium_10/out0.txt", "Ours",validation=validate, show_failures=show_failures, smooth = smooth, val_loss=val_loss)
 plot_fl("results/send_0/out0.txt", "Baseline",validation=validate, show_failures=show_failures, smooth = smooth, val_loss=val_loss)
 # plot_fl("results/medium_naive_16/out0.txt", "Copy",validation=validate, show_failures=show_failures, smooth = smooth, val_loss=val_loss)
 # plot_fl("results/medium_gradavg_16/out0.txt", "Weighted Average",validation=validate, show_failures=show_failures, smooth = smooth, val_loss=val_loss)
