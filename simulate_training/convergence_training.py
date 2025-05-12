@@ -243,10 +243,10 @@ for itr in range(max_iterations):
 
         else:
             last_failure += 1
-        if last_failure > 50 + random.randint(0,10):
-            last_failure = 0
-            can_fail = random.randint(2,len(stages)-2)
-            failures[can_fail] = 0
+        # if last_failure > 50 + random.randint(0,10):
+        #     last_failure = 0
+        #     can_fail = random.randint(2,len(stages)-2)
+        #     failures[can_fail] = 0
             
         for mbid in range(mb_count): 
             x = None
@@ -433,7 +433,7 @@ for itr in range(max_iterations):
                                 loss.backward()
                             print("ERROR",summed)
                             optimizers[i].optimizer.step()
-                            if summed < 1.5:
+                            if summed < 0.5:
                                 break
                             
                             
