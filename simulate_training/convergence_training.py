@@ -234,7 +234,7 @@ for itr in range(max_iterations):
                 # holds embedding and dembedding
                 continue
             can_fail = random.random() > iter_success_probability
-            if can_fail and s != 2 and s != 1:
+            if can_fail and s != 1:
                 failures[s] = random.randint(0,mb_count-1)
                 failures[s] = 0
         
@@ -410,7 +410,7 @@ for itr in range(max_iterations):
                             s = stages[i]
                             
                             optimizers[i] = make_optim(s.parameters(),lr = lr_scale*init_lr,itr=itr)
-                            optimizers[i].optimizer.load_state_dict(deepcopy(optimizers[2],optim.state_dict()))
+                            optimizers[i].optimizer.load_state_dict(deepcopy(optimizers[2].optimizer.state_dict()))
                             # for optim in optimizers:
                             #     optim.optimizer.zero_grad()
                             
@@ -435,7 +435,7 @@ for itr in range(max_iterations):
                             s = stages[i]
                             
                             optimizers[i] = make_optim(s.parameters(),lr = lr_scale*init_lr,itr=itr)
-                            optimizers[i].optimizer.load_state_dict(deepcopy(optimizers[1],optim.state_dict()))
+                            optimizers[i].optimizer.load_state_dict(deepcopy(optimizers[1].optimizer.state_dict()))
                             # for optim in optimizers:
                             #     optim.optimizer.zero_grad()
                             
