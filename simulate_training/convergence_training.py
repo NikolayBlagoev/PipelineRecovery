@@ -88,8 +88,7 @@ def lr_lambda(current_step: int) -> float:
 def make_optim(params,lr,itr = 0):
     return LambdaLR(AdamW(params, lr, betas=(0.9, 0.9), weight_decay=0.01),lr_lambda)
 
-world_data_size = world_size
-rank_data_size = rank
+
 if config["architecture"] == "LLaMa":
     tokenizer = SPTokenizer()
     torch.manual_seed(34107)
@@ -134,13 +133,13 @@ stds = [1 for _ in range(len(stages))]
 prev_gradient_norm = [1 for _ in range(len(stages))]
 prev_gradient_norm_inf = [1 for _ in range(len(stages))]
 if config["dataset"] == "OpenWebText":
-    ds = OpenWebText(tokenizer,batch_size=batch_size, seq_l=seq_l,skip=start_iter*(world_size*mb_count) + validation_amount*2)
+    ds = OpenWebText(tokenizer,batch_size=batch_size, seq_l=seq_l,skip=start_iter*(1*mb_count) + validation_amount*2)
     validation_dataset = OpenWebText(tokenizer,batch_size=16, seq_l=seq_l)
 elif config["dataset"] == "RedPyjamas":
-    ds = RedPyjamav2(tokenizer,batch_size=batch_size, seq_l=seq_l,name="default",skip=start_iter*(world_data_size*mb_count) + validation_amount*2)
+    ds = RedPyjamav2(tokenizer,batch_size=batch_size, seq_l=seq_l,name="default",skip=start_iter*(1*mb_count) + validation_amount*2)
     validation_dataset = RedPyjamav2(tokenizer,batch_size=1, seq_l=seq_l,name="default")
 elif config["dataset"] == "TinyStories":
-    ds = TinyStories(tokenizer,batch_size=batch_size, seq_l=seq_l,skip=start_iter*(world_size*mb_count))
+    ds = TinyStories(tokenizer,batch_size=batch_size, seq_l=seq_l,skip=start_iter*(1*mb_count))
     validation_dataset = TinyStories(tokenizer,batch_size=16, seq_l=seq_l, split="validation")
 
 
@@ -192,8 +191,8 @@ t1 = (time() - t1)
 t1 += len(stages)*mb_size / (0.1*1024**3) # in reality you will do multiple waves
 t1 = t1 * 2 # in reality you will do multiple waves
 print("time for F to B",t1 * 2.5) # backwards is a bit slower
-print("time for dp", (2*world_size - 1) * sum(vls[-1][1]) * 8 / (0.2*1024**3))
-total_time = t1 * 2.5 + (2*world_size - 1) * sum(vls[-1][1]) * 8 / (0.2*1024**3) # on same cluster large devices
+print("time for dp", (2*4 - 1) * sum(vls[-1][1]) * 8 / (0.2*1024**3))
+total_time = t1 * 2.5 + (2*4 - 1) * sum(vls[-1][1]) * 8 / (0.2*1024**3) # on same cluster large devices
 total_time *=  1 # synchronisation
 print("total time per iteration ", total_time)
 iterations_per_h = 60*60 / total_time 
@@ -236,13 +235,8 @@ for itr in range(max_iterations):
             while flg:
                 flg = False
                 try:
-                    while idx < world_data_size:
-                        if idx == rank_data_size:
-                            x = next(iter_ds)
-                            x = x.to(device)
-                        else:
-                            next(iter_ds)
-                        idx+=1
+                    x = next(iter_ds)
+                    x = x.to(device)
                 except StopIteration:
                     flg = True
                     iter_ds = iter(ds)
