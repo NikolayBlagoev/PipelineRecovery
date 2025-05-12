@@ -277,7 +277,7 @@ for itr in range(max_iterations):
                             selector = i - 1
                         s.load_state_dict(deepcopy(stages[selector].state_dict()))
                         optimizers[i] = make_optim(s.parameters(),lr = lr_scale*init_lr,itr=itr)
-                        for _ in range(50):
+                        for _ in range(8):
                             optimizers[i].optimizer.zero_grad()
                             summed = 0
                             for x_prim,y_prim in zip(prev[i-1],prev[i]):
@@ -319,7 +319,7 @@ for itr in range(max_iterations):
                     
                         optimizers[i] = make_optim(s.parameters(),lr = lr_scale*init_lr,itr=itr)
                         del m1
-                        for _ in range(50):
+                        for _ in range(8):
                             optimizers[i].optimizer.zero_grad()
                             summed = 0
                             for x_prim,y_prim in zip(prev[i-1],prev[i]):
@@ -354,7 +354,7 @@ for itr in range(max_iterations):
                                 device=device, n_layers=n_layers_per_stage, ctx_size=seq_l,padding_idx=tokenizer.pad_id)
                         s = stages[i]
                         optimizers[i] = make_optim(s.parameters(),lr = lr_scale*init_lr,itr=itr)
-                        for _ in range(50):
+                        for _ in range(8):
                             optimizers[i].optimizer.zero_grad()
                             summed = 0
                             for x_prim,y_prim in zip(prev[i-1],prev[i]):
