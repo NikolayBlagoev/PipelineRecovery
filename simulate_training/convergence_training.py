@@ -106,7 +106,7 @@ if config["architecture"] == "LLaMa":
 elif config["architecture"] == "GPT":
     tokenizer = GPTTokenizer()
     torch.manual_seed(34107)
-    s0 = GPTFirstStage(tokenizer.vocab_size, dmodel=dmodel, num_heads=num_heads, device=device,
+    s0 = GPTFirstStage(tokenizer.vocab_size, dmodel=dmodel, num_heads=num_heads, device="cuda:0",
                             n_layers=0, ctx_size=seq_l, padding_idx=tokenizer.pad_id, de_embed=True,dropout_prob=0)
     stages = [s0]
 
@@ -176,12 +176,13 @@ mb_size = batch_size * dmodel * seq_l * 8
 for _ in range(mb_count): 
     with torch.no_grad():
         x = next(iter_vs)
-        x = x.to(device)
+        x = x.to("cuda:0")
         target = x.clone().detach()
         for i,s in enumerate(stages):
             if i == 0:
                 x = s.embed(x)
             else:
+                x = x.to(f"cuda:{i//2}")
                 x = s(x)
                 
                     
@@ -236,7 +237,7 @@ for itr in range(max_iterations):
                 flg = False
                 try:
                     x = next(iter_ds)
-                    x = x.to(device)
+                    x = x.to("cuda:0")
                 except StopIteration:
                     flg = True
                     iter_ds = iter(ds)
@@ -411,13 +412,14 @@ for itr in range(max_iterations):
             for _ in range(validation_amount): 
                 with torch.no_grad():
                     x = next(iter_vs)
-                    x = x.to(device)
+                    x = x.to("cuda:0")
                     target = x.clone().detach()
                     for i,s in enumerate(stages):
                         s.eval()
                         if i == 0:
                             x = s.embed(x)
                         else:
+                            x = x.to(f"cuda:{i//2}")
                             x = s(x)
                     x = stages[0].forward_end(x)
                     loss = perplexityLoss(x,target)
