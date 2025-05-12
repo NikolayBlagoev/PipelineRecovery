@@ -518,10 +518,10 @@ for itr in range(max_iterations):
                     x = s.embed(x)
                 else:
                     if i == 1 and mbid % 2 == 1:
-                        print("running out of order",2)
+                        # print("running out of order",2)
                         x = stages[2](x)
                     elif i == 2 and mbid % 2 == 1:
-                        print("running out of order",1)
+                        # print("running out of order",1)
                         x = stages[1](x)
                     else:
                         x = s(x)
