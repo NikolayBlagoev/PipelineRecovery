@@ -91,7 +91,7 @@ def make_optim(params,lr,itr = 0):
 
 if config["architecture"] == "LLaMa":
     tokenizer = SPTokenizer()
-    torch.manual_seed(1)
+    torch.manual_seed(0)
     s0 = LLamaFirstStage(tokenizer.vocab_size,dmodel=dmodel,num_heads=num_heads,
                     device="cuda:0", n_layers=0, ctx_size=seq_l,padding_idx=tokenizer.pad_id,de_embed=True)
     
@@ -105,7 +105,7 @@ if config["architecture"] == "LLaMa":
                     device=f"cuda:{(1 + k)//2}", n_layers=n_layers_per_stage, ctx_size=seq_l,padding_idx=tokenizer.pad_id))
 elif config["architecture"] == "GPT":
     tokenizer = GPTTokenizer()
-    torch.manual_seed(1)
+    torch.manual_seed(0)
     s0 = GPTFirstStage(tokenizer.vocab_size, dmodel=dmodel, num_heads=num_heads, device="cuda:0",
                             n_layers=0, ctx_size=seq_l, padding_idx=tokenizer.pad_id, de_embed=True,dropout_prob=0)
     stages = [s0]
