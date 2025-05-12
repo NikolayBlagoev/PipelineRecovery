@@ -330,7 +330,7 @@ for itr in range(max_iterations):
                             optimizers[i].optimizer.zero_grad()
                             summed = 0
                             for x_prim,y_prim in zip(prev[i-1],prev[i]):
-                                loss = mse_loss(stages[i](x_prim.to(f"cuda:{i//2}")),y_prim.to(f"cuda:{i//2}"))
+                                loss = mse_loss(stages[i](x_prim.to(device)),y_prim.to(device))
                                 loss = loss / len(prev[i-1])
                                 summed += loss.item()
                                 loss.backward()
