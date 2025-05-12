@@ -386,36 +386,17 @@ for itr in range(max_iterations):
                             
                     elif checkpoint_mode == "ours-grad-avg":
                         if i == len(stages)-1:
-                            m1 = deepcopy(stages[1].state_dict())
-                            m2 = deepcopy(stages[i-1].state_dict())
-                            alpha = 0.5*abs(prev_gradient_norm[1]) + 0.0001
-                            beta = abs(prev_gradient_norm[i-1]) + 0.0001
-                            if config["architecture"] == "LLaMa":
-                                stages[i] = LLamaStage(dmodel=dmodel,num_heads=num_heads,
-                                    device=device, n_layers=n_layers_per_stage, ctx_size=seq_l,padding_idx=tokenizer.pad_id)
-                            else:
-                                stages[i] = GPTStage(dmodel=dmodel,num_heads=num_heads,
-                                    device=device, n_layers=n_layers_per_stage, ctx_size=seq_l,dropout_prob=0)
-                            m3 = stages[i].state_dict()
-                            for key in m1:
-                                m3[key] = (alpha*m1[key] + beta*m2[key]) / (alpha + beta)
-                            stages[i].load_state_dict(m3)
-                            s = stages[i]
-                            
+                            s.load_state_dict(deepcopy(stages[i-1].state_dict()))
                             optimizers[i] = make_optim(s.parameters(),lr = lr_scale*init_lr,itr=itr)
                             # for optim in optimizers:
                             #     optim.optimizer.zero_grad()
-                            
-                            del m3
-                            del m2
-                            del m1
                             
                             
                         elif i == 1: 
-                            m1 = deepcopy(stages[i+1].state_dict())
-                            m2 = deepcopy(stages[-1].state_dict())
-                            alpha = abs(prev_gradient_norm[i+1]) + 0.0001
-                            beta = 0.5*abs(prev_gradient_norm[-1]) + 0.0001
+                            m1 = deepcopy(stages[2].state_dict())
+                            m2 = deepcopy(stages[3].state_dict())
+                            alpha = 4*abs(prev_gradient_norm[2]) + 0.0001
+                            beta = abs(prev_gradient_norm[3]) + 0.0001
                             if config["architecture"] == "LLaMa":
                                 stages[i] = LLamaStage(dmodel=dmodel,num_heads=num_heads,
                                     device=device, n_layers=n_layers_per_stage, ctx_size=seq_l,padding_idx=tokenizer.pad_id)
@@ -435,7 +416,30 @@ for itr in range(max_iterations):
                             del m3
                             del m2
                             del m1
+                        elif i == 2: 
+                            m1 = deepcopy(stages[1].state_dict())
+                            m2 = deepcopy(stages[3].state_dict())
+                            alpha = 4*abs(prev_gradient_norm[1]) + 0.0001
+                            beta = abs(prev_gradient_norm[3]) + 0.0001
+                            if config["architecture"] == "LLaMa":
+                                stages[i] = LLamaStage(dmodel=dmodel,num_heads=num_heads,
+                                    device=device, n_layers=n_layers_per_stage, ctx_size=seq_l,padding_idx=tokenizer.pad_id)
+                            else:
+                                stages[i] = GPTStage(dmodel=dmodel,num_heads=num_heads,
+                                    device=device, n_layers=n_layers_per_stage, ctx_size=seq_l,dropout_prob=0)
+                            m3 = stages[i].state_dict()
+                            for key in m1:
+                                m3[key] = (alpha*m1[key] + beta*m2[key]) / (alpha + beta)
+                            stages[i].load_state_dict(m3)
+                            s = stages[i]
                             
+                            optimizers[i] = make_optim(s.parameters(),lr = lr_scale*init_lr,itr=itr)
+                            # for optim in optimizers:
+                            #     optim.optimizer.zero_grad()
+                            
+                            del m3
+                            del m2
+                            del m1
                             
                         else:
                             m1 = deepcopy(stages[i+1].state_dict())
@@ -461,38 +465,38 @@ for itr in range(max_iterations):
                             del m3
                             del m2
                             del m1
-                            for _ in range(50):
-                                optimizers[i].optimizer.zero_grad()
-                                summed = 0
-                                for x_prim,y_prim in zip(prev[i-1],prev[i]):
-                                    loss = mse_loss(stages[i](x_prim.to(device)),y_prim.to(device))
-                                    loss = loss / len(prev[i-1])
-                                    summed += loss.item()
-                                    loss.backward()
-                                print("ERROR",summed)
-                                optimizers[i].optimizer.step()
-                                if summed < 0.5:
-                                    break
-                                
-                                
-                                # optimizers[i].optimizer.step()
-                                # equivalent to 2 * learning rate
-                                optimizers[i].optimizer.zero_grad()
-                            dist.barrier()
-                            tmp = []
-                            for param in s.parameters():
-                                if param.grad == None:
-                                    tmp.append(torch.zeros_like(param,device="cpu").view(-1))                      
-                                    continue
-                                tmp.append(param.data.view(-1))
-                                
-                            prev_grad = torch.cat(tmp).to("cpu")
-                            dist.all_reduce(prev_grad, op = dist.ReduceOp.SUM)
-                            tmp = torch.split(prev_grad, vls[idx][1])
-                            for pi, param in enumerate(s.parameters()):
-                                param.data = tmp[pi].view(vls[idx][0][pi]).to(device)/world_size # average
-                            dist.barrier()
+                        for _ in range(50):
+                            optimizers[i].optimizer.zero_grad()
+                            summed = 0
+                            for x_prim,y_prim in zip(prev[i-1],prev[i]):
+                                loss = mse_loss(stages[i](x_prim.to(device)),y_prim.to(device))
+                                loss = loss / len(prev[i-1])
+                                summed += loss.item()
+                                loss.backward()
+                            print("ERROR",summed)
+                            optimizers[i].optimizer.step()
+                            if summed < 0.5:
+                                break
                             
+                            
+                            # optimizers[i].optimizer.step()
+                            # equivalent to 2 * learning rate
+                            optimizers[i].optimizer.zero_grad()
+                        dist.barrier()
+                        tmp = []
+                        for param in s.parameters():
+                            if param.grad == None:
+                                tmp.append(torch.zeros_like(param,device="cpu").view(-1))                      
+                                continue
+                            tmp.append(param.data.view(-1))
+                            
+                        prev_grad = torch.cat(tmp).to("cpu")
+                        dist.all_reduce(prev_grad, op = dist.ReduceOp.SUM)
+                        tmp = torch.split(prev_grad, vls[idx][1])
+                        for pi, param in enumerate(s.parameters()):
+                            param.data = tmp[pi].view(vls[idx][0][pi]).to(device)/world_size # average
+                        dist.barrier()
+                        
                         
                     
                     elif checkpoint_mode == "one":
@@ -511,8 +515,12 @@ for itr in range(max_iterations):
                 if i == 0:
                     x = s.embed(x)
                 else:
-                    
-                    x = s(x)
+                    if i == 1 and mbid % 2 == 1:
+                        x = stages[2](x)
+                    elif i == 2 and mbid % 2 == 1:
+                        x = stages[1](x)
+                    else:
+                        x = s(x)
                 input_output_cahce[i].append(x.detach().to("cpu"))
             x = stages[0].forward_end(x)
             
