@@ -8,8 +8,8 @@ from copy import deepcopy
 from sys import argv
 from torch.nn.functional import mse_loss
 import random
-random.seed(42)
-State.set_seed(42)
+random.seed(1)
+State.set_seed(1)
 from torch.optim import AdamW, Adam
 import torch.nn.functional as F
 from torch.optim.lr_scheduler import LambdaLR
@@ -309,7 +309,7 @@ for itr in range(max_iterations):
                     
                         optimizers[i] = make_optim(s.parameters(),lr = lr_scale*init_lr,itr=itr)
                         del m1
-                        for _ in range(8):
+                        for _ in range(10):
                             optimizers[i].optimizer.zero_grad()
                             summed = 0
                             for x_prim,y_prim in zip(prev[i-1],prev[i]):
@@ -413,7 +413,7 @@ for itr in range(max_iterations):
                             del m3
                             del m2
                             del m1
-                        for _ in range(8):
+                        for _ in range(20):
                             optimizers[i].optimizer.zero_grad()
                             summed = 0
                             for x_prim,y_prim in zip(prev[i-1],prev[i]):
@@ -423,6 +423,8 @@ for itr in range(max_iterations):
                                 loss.backward()
                             print("ERROR",summed)
                             optimizers[i].optimizer.step()
+                            if summed < 1.5:
+                                break
                             
                             
                             # optimizers[i].optimizer.step()
