@@ -531,20 +531,20 @@ for itr in range(max_iterations):
                             # optimizers[i].optimizer.step()
                             # equivalent to 2 * learning rate
                             optimizers[i].optimizer.zero_grad()
-                        dist.barrier()
-                        tmp = []
-                        for param in s.parameters():
-                            if param.grad == None:
-                                tmp.append(torch.zeros_like(param,device="cpu").view(-1))                      
-                                continue
-                            tmp.append(param.data.view(-1))
+                        # dist.barrier()
+                        # tmp = []
+                        # for param in s.parameters():
+                        #     if param.grad == None:
+                        #         tmp.append(torch.zeros_like(param,device="cpu").view(-1))                      
+                        #         continue
+                        #     tmp.append(param.data.view(-1))
                             
-                        prev_grad = torch.cat(tmp).to("cpu")
-                        dist.all_reduce(prev_grad, op = dist.ReduceOp.SUM)
-                        tmp = torch.split(prev_grad, vls[idx][1])
-                        for pi, param in enumerate(s.parameters()):
-                            param.data = tmp[pi].view(vls[idx][0][pi]).to(device)/world_size # average
-                        dist.barrier()
+                        # prev_grad = torch.cat(tmp).to("cpu")
+                        # dist.all_reduce(prev_grad, op = dist.ReduceOp.SUM)
+                        # tmp = torch.split(prev_grad, vls[idx][1])
+                        # for pi, param in enumerate(s.parameters()):
+                        #     param.data = tmp[pi].view(vls[idx][0][pi]).to(device)/world_size # average
+                        # dist.barrier()
                         
                         
                     
