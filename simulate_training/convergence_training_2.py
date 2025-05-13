@@ -464,7 +464,7 @@ for itr in range(max_iterations):
                             del m3
                             del m2
                             del m1
-                        for _ in range(7):
+                        for _ in range(5):
                             optimizers[i].optimizer.zero_grad()
                             summed = 0
                             for x_prim,y_prim in zip(prev[i-1],prev[i]):
@@ -484,7 +484,7 @@ for itr in range(max_iterations):
                         dist.barrier()
                         tmp = []
                         for param in s.parameters():
-                            if param.grad == None:
+                            if param == None:
                                 tmp.append(torch.zeros_like(param,device="cpu").view(-1))                      
                                 continue
                             tmp.append(param.data.view(-1))
