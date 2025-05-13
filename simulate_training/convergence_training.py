@@ -565,19 +565,19 @@ for itr in range(max_iterations):
                     x = s.embed(x)
                 else:
                     if i == 1 and mbid % 2 == 1:
-                        print("running out of order",2,mbid)
+                        # print("running out of order",2,mbid)
                         x = stages[2](x)
                     elif i == 2 and mbid % 2 == 1:
-                        print("running out of order",1,mbid)
+                        # print("running out of order",1,mbid)
                         x = stages[1](x)
                     elif i == 5 and mbid % 2 == 1:
-                        print("running out of order",6,mbid)
+                        # print("running out of order",6,mbid)
                         x = stages[6](x)
                     elif i == 6 and mbid % 2 == 1:
-                        print("running out of order",5,mbid)
+                        # print("running out of order",5,mbid)
                         x = stages[5](x)
                     else:
-                        print("running",i,mbid)
+                        # print("running",i,mbid)
                         x = s(x)
                 input_output_cahce[i].append(x.detach().to("cpu"))
             x = stages[0].forward_end(x)
