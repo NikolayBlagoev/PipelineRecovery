@@ -437,57 +437,7 @@ for itr in range(max_iterations):
                             del m3
                             del m2
                             del m1
-                        elif i == 2: 
-                            m1 = deepcopy(stages[1].state_dict())
-                            m2 = deepcopy(stages[3].state_dict())
-                            alpha = 1
-                            beta = 0
-                            if config["architecture"] == "LLaMa":
-                                stages[i] = LLamaStage(dmodel=dmodel,num_heads=num_heads,
-                                    device=device, n_layers=n_layers_per_stage, ctx_size=seq_l,padding_idx=tokenizer.pad_id)
-                            else:
-                                stages[i] = GPTStage(dmodel=dmodel,num_heads=num_heads,
-                                    device=device, n_layers=n_layers_per_stage, ctx_size=seq_l,dropout_prob=0)
-                            m3 = stages[i].state_dict()
-                            for key in m1:
-                                m3[key] = (alpha*m1[key] + beta*m2[key]) / (alpha + beta)
-                            stages[i].load_state_dict(m3)
-                            s = stages[i]
-                            
-                            optimizers[i] = make_optim(s.parameters(),lr = lr_scale*init_lr,itr=itr)
-                            optimizers[i].optimizer.load_state_dict(deepcopy(optimizers[1].optimizer.state_dict()))
-                            # for optim in optimizers:
-                            #     optim.optimizer.zero_grad()
-                            
-                            del m3
-                            del m2
-                            del m1
-                        elif i == 5: 
-                            m1 = deepcopy(stages[6].state_dict())
-                            m2 = deepcopy(stages[4].state_dict())
-                            alpha = 1
-                            beta = 0
-                            if config["architecture"] == "LLaMa":
-                                stages[i] = LLamaStage(dmodel=dmodel,num_heads=num_heads,
-                                    device=device, n_layers=n_layers_per_stage, ctx_size=seq_l,padding_idx=tokenizer.pad_id)
-                            else:
-                                stages[i] = GPTStage(dmodel=dmodel,num_heads=num_heads,
-                                    device=device, n_layers=n_layers_per_stage, ctx_size=seq_l,dropout_prob=0)
-                            m3 = stages[i].state_dict()
-                            for key in m1:
-                                m3[key] = (alpha*m1[key] + beta*m2[key]) / (alpha + beta)
-                            stages[i].load_state_dict(m3)
-                            s = stages[i]
-                            
-                            optimizers[i] = make_optim(s.parameters(),lr = lr_scale*init_lr,itr=itr)
-                            optimizers[i].optimizer.load_state_dict(deepcopy(optimizers[1].optimizer.state_dict()))
-                            # for optim in optimizers:
-                            #     optim.optimizer.zero_grad()
-                            
-                            del m3
-                            del m2
-                            del m1
-                            
+                        
                         else:
                             m1 = deepcopy(stages[i+1].state_dict())
                             m2 = deepcopy(stages[i-1].state_dict())
@@ -512,7 +462,7 @@ for itr in range(max_iterations):
                             del m3
                             del m2
                             del m1
-                        for _ in range(5):
+                        for _ in range(7):
                             optimizers[i].optimizer.zero_grad()
                             summed = 0
                             for x_prim,y_prim in zip(prev[i-1],prev[i]):
