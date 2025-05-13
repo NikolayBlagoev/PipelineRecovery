@@ -234,7 +234,7 @@ for itr in range(max_iterations):
                 # holds embedding and dembedding
                 continue
             can_fail = random.random() > iter_success_probability
-            if can_fail and s != 2 and s != 1:
+            if can_fail and s != 1:
                 failures[s] = random.randint(0,mb_count-1)
                 failures[s] = 0
         
@@ -517,14 +517,7 @@ for itr in range(max_iterations):
                 if i == 0:
                     x = s.embed(x)
                 else:
-                    if i == 1 and mbid % 2 == 1:
-                        # print("running out of order",2)
-                        x = stages[2](x)
-                    elif i == 2 and mbid % 2 == 1:
-                        # print("running out of order",1)
-                        x = stages[1](x)
-                    else:
-                        x = s(x)
+                    x = s(x)
                 input_output_cahce[i].append(x.detach().to("cpu"))
             x = stages[0].forward_end(x)
             
