@@ -234,8 +234,8 @@ for itr in range(max_iterations):
                 # holds embedding and dembedding
                 continue
             can_fail = random.random() > iter_success_probability
-            if s == 2 and itr == 50:
-                can_fail = True
+            # if s == 2 and itr == 50:
+            #     can_fail = True
             if can_fail:
                 failures[s] = random.randint(0,mb_count-1)
                 failures[s] = 0
@@ -514,12 +514,12 @@ for itr in range(max_iterations):
                             del m3
                             del m2
                             del m1
-                        for _ in range(0):
+                        for _ in range(5):
                             optimizers[i].optimizer.zero_grad()
                             summed = 0
-                            for x_prim,y_prim in zip(prev[i-1],prev[i]):
+                            for x_prim,y_prim in prev[i]:
                                 loss = mse_loss(stages[i](x_prim.to(device)),y_prim.to(device))
-                                loss = loss / len(prev[i-1])
+                                loss = loss / len(prev[i])
                                 summed += loss.item()
                                 loss.backward()
                             print("ERROR",summed)
@@ -562,24 +562,37 @@ for itr in range(max_iterations):
                     
 
                 if i == 0:
+                    tmp = x.detach().to("cpu")
                     x = s.embed(x)
+                    input_output_cahce[0].append((tmp,x.detach().to("cpu")))
                 else:
                     if i == 1 and mbid % 2 == 1:
                         # print("running out of order",2,mbid)
+                        tmp = x.detach().to("cpu")
                         x = stages[2](x)
+                        input_output_cahce[2].append((tmp,x.detach().to("cpu")))
                     elif i == 2 and mbid % 2 == 1:
                         # print("running out of order",1,mbid)
+                        tmp = x.detach().to("cpu")
                         x = stages[1](x)
+                        input_output_cahce[1].append((tmp,x.detach().to("cpu")))
                     elif i == 5 and mbid % 2 == 1:
                         # print("running out of order",6,mbid)
+                        tmp = x.detach().to("cpu")
                         x = stages[6](x)
+                        input_output_cahce[6].append((tmp,x.detach().to("cpu")))
                     elif i == 6 and mbid % 2 == 1:
                         # print("running out of order",5,mbid)
+                        tmp = x.detach().to("cpu")
+
                         x = stages[5](x)
+                        input_output_cahce[5].append((tmp,x.detach().to("cpu")))
                     else:
+                        tmp = x.detach().to("cpu")
                         # print("running",i,mbid)
                         x = s(x)
-                input_output_cahce[i].append(x.detach().to("cpu"))
+                        input_output_cahce[i].append((tmp,x.detach().to("cpu")))
+                
             x = stages[0].forward_end(x)
             
             loss = causalLLMLoss(x,target,tokenizer.vocab_size)
