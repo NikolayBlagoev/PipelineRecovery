@@ -464,7 +464,7 @@ for itr in range(max_iterations):
                             del m3
                             del m2
                             del m1
-                            for _ in range(0):
+                            for _ in range(3):
                                 optimizers[i].optimizer.zero_grad()
                                 summed = 0
                                 for x_prim,y_prim in zip(prev[i-1],prev[i]):
@@ -515,7 +515,7 @@ for itr in range(max_iterations):
                     x = s.embed(x)
                 else:
                    x = s(x)
-                # input_output_cahce[i].append(x.detach().to("cpu"))
+                input_output_cahce[i].append(x.detach().to("cpu"))
             x = stages[0].forward_end(x)
             
             loss = causalLLMLoss(x,target,tokenizer.vocab_size)
