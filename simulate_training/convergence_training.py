@@ -389,105 +389,40 @@ for itr in range(max_iterations):
                     elif checkpoint_mode == "ours-grad-avg":
                         if i == len(stages)-1:
                             m1 = deepcopy(stages[5].state_dict())
-                            m2 = deepcopy(stages[4].state_dict())
-                            alpha = 1
-                            beta = 0
-                            if config["architecture"] == "LLaMa":
-                                stages[i] = LLamaStage(dmodel=dmodel,num_heads=num_heads,
-                                    device=device, n_layers=n_layers_per_stage, ctx_size=seq_l,padding_idx=tokenizer.pad_id)
-                            else:
-                                stages[i] = GPTStage(dmodel=dmodel,num_heads=num_heads,
-                                    device=device, n_layers=n_layers_per_stage, ctx_size=seq_l,dropout_prob=0)
-                            m3 = stages[i].state_dict()
-                            for key in m1:
-                                m3[key] = (alpha*m1[key] + beta*m2[key]) / (alpha + beta)
-                            stages[i].load_state_dict(m3)
+                            
+                            stages[i].load_state_dict(m1)
                             s = stages[i]
                             
                             optimizers[i] = make_optim(s.parameters(),lr = lr_scale*init_lr,itr=itr)
-                            optimizers[i].optimizer.load_state_dict(deepcopy(optimizers[5].optimizer.state_dict()))
-                            # for optim in optimizers:
-                            #     optim.optimizer.zero_grad()
-                            
-                            del m3
-                            del m2
+
                             del m1
                             
                             
                         elif i == 1: 
                             m1 = deepcopy(stages[2].state_dict())
-                            m2 = deepcopy(stages[3].state_dict())
-                            alpha = 1
-                            beta = 0
-                            if config["architecture"] == "LLaMa":
-                                stages[i] = LLamaStage(dmodel=dmodel,num_heads=num_heads,
-                                    device=device, n_layers=n_layers_per_stage, ctx_size=seq_l,padding_idx=tokenizer.pad_id)
-                            else:
-                                stages[i] = GPTStage(dmodel=dmodel,num_heads=num_heads,
-                                    device=device, n_layers=n_layers_per_stage, ctx_size=seq_l,dropout_prob=0)
-                            m3 = stages[i].state_dict()
-                            for key in m1:
-                                m3[key] = (alpha*m1[key] + beta*m2[key]) / (alpha + beta)
-                            stages[i].load_state_dict(m3)
+                            stages[i].load_state_dict(m1)
                             s = stages[i]
                             
                             optimizers[i] = make_optim(s.parameters(),lr = lr_scale*init_lr,itr=itr)
-                            optimizers[i].optimizer.load_state_dict(deepcopy(optimizers[2].optimizer.state_dict()))
-                            # for optim in optimizers:
-                            #     optim.optimizer.zero_grad()
                             
-                            del m3
-                            del m2
                             del m1
                         elif i == 2: 
                             m1 = deepcopy(stages[1].state_dict())
-                            m2 = deepcopy(stages[3].state_dict())
-                            alpha = 1
-                            beta = 0
-                            if config["architecture"] == "LLaMa":
-                                stages[i] = LLamaStage(dmodel=dmodel,num_heads=num_heads,
-                                    device=device, n_layers=n_layers_per_stage, ctx_size=seq_l,padding_idx=tokenizer.pad_id)
-                            else:
-                                stages[i] = GPTStage(dmodel=dmodel,num_heads=num_heads,
-                                    device=device, n_layers=n_layers_per_stage, ctx_size=seq_l,dropout_prob=0)
-                            m3 = stages[i].state_dict()
-                            for key in m1:
-                                m3[key] = (alpha*m1[key] + beta*m2[key]) / (alpha + beta)
-                            stages[i].load_state_dict(m3)
+                            
+                            stages[i].load_state_dict(m1)
                             s = stages[i]
                             
                             optimizers[i] = make_optim(s.parameters(),lr = lr_scale*init_lr,itr=itr)
-                            optimizers[i].optimizer.load_state_dict(deepcopy(optimizers[1].optimizer.state_dict()))
-                            # for optim in optimizers:
-                            #     optim.optimizer.zero_grad()
-                            
-                            del m3
-                            del m2
+
                             del m1
                         elif i == 5: 
                             m1 = deepcopy(stages[6].state_dict())
-                            m2 = deepcopy(stages[4].state_dict())
-                            alpha = 1
-                            beta = 0
-                            if config["architecture"] == "LLaMa":
-                                stages[i] = LLamaStage(dmodel=dmodel,num_heads=num_heads,
-                                    device=device, n_layers=n_layers_per_stage, ctx_size=seq_l,padding_idx=tokenizer.pad_id)
-                            else:
-                                stages[i] = GPTStage(dmodel=dmodel,num_heads=num_heads,
-                                    device=device, n_layers=n_layers_per_stage, ctx_size=seq_l,dropout_prob=0)
-                            m3 = stages[i].state_dict()
-                            for key in m1:
-                                m3[key] = (alpha*m1[key] + beta*m2[key]) / (alpha + beta)
-                            stages[i].load_state_dict(m3)
+                            
+                            stages[i].load_state_dict(m1)
                             s = stages[i]
                             
                             optimizers[i] = make_optim(s.parameters(),lr = lr_scale*init_lr,itr=itr)
-                            optimizers[i].optimizer.load_state_dict(deepcopy(optimizers[6].optimizer.state_dict()))
-                            # for optim in optimizers:
-                            #     optim.optimizer.zero_grad()
-                            
-                            del m3
-                            del m2
+                          
                             del m1
                             
                         else:
@@ -514,7 +449,7 @@ for itr in range(max_iterations):
                             del m3
                             del m2
                             del m1
-                        for _ in range(5):
+                        for _ in range(0):
                             optimizers[i].optimizer.zero_grad()
                             summed = 0
                             for x_prim,y_prim in prev[i]:
@@ -568,30 +503,30 @@ for itr in range(max_iterations):
                 else:
                     if i == 1 and mbid % 2 == 1:
                         # print("running out of order",2,mbid)
-                        tmp = x.detach().to("cpu")
+                        tmp = x.detach().clone().to("cpu")
                         x = stages[2](x)
-                        input_output_cahce[2].append((tmp,x.detach().to("cpu")))
+                        input_output_cahce[2].append((tmp,x.detach().clone().to("cpu")))
                     elif i == 2 and mbid % 2 == 1:
                         # print("running out of order",1,mbid)
-                        tmp = x.detach().to("cpu")
+                        tmp = x.detach().clone().to("cpu")
                         x = stages[1](x)
-                        input_output_cahce[1].append((tmp,x.detach().to("cpu")))
+                        input_output_cahce[1].append((tmp,x.detach().clone().to("cpu")))
                     elif i == 5 and mbid % 2 == 1:
                         # print("running out of order",6,mbid)
-                        tmp = x.detach().to("cpu")
+                        tmp = x.detach().clone().to("cpu")
                         x = stages[6](x)
-                        input_output_cahce[6].append((tmp,x.detach().to("cpu")))
+                        input_output_cahce[6].append((tmp,x.detach().clone().to("cpu")))
                     elif i == 6 and mbid % 2 == 1:
                         # print("running out of order",5,mbid)
-                        tmp = x.detach().to("cpu")
+                        tmp = x.detach().clone().to("cpu")
 
                         x = stages[5](x)
-                        input_output_cahce[5].append((tmp,x.detach().to("cpu")))
+                        input_output_cahce[5].append((tmp,x.detach().clone().to("cpu")))
                     else:
-                        tmp = x.detach().to("cpu")
+                        tmp = x.detach().clone().to("cpu")
                         # print("running",i,mbid)
                         x = s(x)
-                        input_output_cahce[i].append((tmp,x.detach().to("cpu")))
+                        input_output_cahce[i].append((tmp,x.detach().clone().to("cpu")))
                 
             x = stages[0].forward_end(x)
             
