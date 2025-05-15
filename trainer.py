@@ -37,9 +37,6 @@ if __name__ == '__main__':
     loop = asyncio.new_event_loop()
     locations = get_locations()
     send_mbs = 6
-    if setting == "redundant":
-        batch_size = batch_size // 2
-        send_mbs = send_mbs * 2
     def delay_map(currid,otherid):
         p1 = locations[int(currid) % len(locations)]
         p2 = locations[int(otherid) % len(locations)]
@@ -119,6 +116,6 @@ if __name__ == '__main__':
         loop.run_until_complete(me.listen())
         loop.run_until_complete(cb)
         loop.run_until_complete(me.close())
-        has_weights = setting == "redundant"
+        
         curr_id += 21
         

@@ -1,7 +1,7 @@
 {
     "dataset": "TinyStories",
     "architecture": "LLaMa",
-    "validation": 20,
+    "validation": 50,
     "dmodel": 512,
     "num_heads": 8,
     "n_layers_per_stage": 3,

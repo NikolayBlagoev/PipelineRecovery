@@ -1,7 +1,7 @@
 {
     "dataset": "OpenWebText",
     "architecture": "GPT",
-    "validation": 20,
+    "validation": 50,
     "dmodel": 1024,
     "num_heads": 16,
     "n_layers_per_stage": 4,
